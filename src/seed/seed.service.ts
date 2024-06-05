@@ -1,38 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, MongooseError, Promise } from 'mongoose';
+import { Location } from 'src/locations/entities/location.entity';
+import { Locations } from './interfaces/location.interface';
 
 
 @Injectable()
 export class SeedService {
 
-  executeSeed() {
-    const locations = [
-      {
-        "location_number": 1,
-        "name": "beach club",
-        "active": true,
-      },
-      {
-        "location_number": 3,
-        "name": "cancun",
-        "active": true,
-      },
-      {
-        "location_number": 4,
-        "name": "punta cana",
-        "active": true,
-      },
-      {
-        "location_number": 5,
-        "name": "playa del carmen",
-        "active": true,
-      },
-    ]
 
-    // locations.forEach(location => {
-    //   console.log(location.name, location.location_number)
-    // });
+  constructor(
+    @InjectModel(Location.name)
+    private readonly locationModel: Model<Location>
+  ) { }
 
-    return locations
+
+  async executeSeed() {
+
+    await this.locationModel.deleteMany({}) // delete * from locations
+
+    const locations = Locations
+
+    const dataToInsert: { location_number: number, name: string }[] = []
+
+    locations.forEach(({ location_number, name }) => {
+
+      // const location = await this.locationModel.create({ location_number, name })
+      dataToInsert.push({ location_number, name })
+
+    });
+
+    this.locationModel.insertMany(dataToInsert)
+
+    // await Promise.all(insertPromisesArray)
+
+    return { "msg": 'Seed ejecutada' }
+
+
 
   }
 

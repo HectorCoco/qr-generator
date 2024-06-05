@@ -13,12 +13,7 @@ export interface Result {
     active: true
 }
 
-
-
-
-
-
-[
+export const Locations = [
     {
         "location_number": 1,
         "name": "beach club",

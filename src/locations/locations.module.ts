@@ -14,6 +14,9 @@ import { Location, LocationSchema } from './entities/location.entity';
         schema: LocationSchema,
       }
     ])
-  ]
+  ],
+  exports: [
+    MongooseModule
+  ],
 })
 export class LocationsModule { }

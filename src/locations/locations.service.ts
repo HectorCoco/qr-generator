@@ -84,7 +84,7 @@ export class LocationsService {
     if (deletedCount === 0) {
       throw new BadRequestException(`Locación con id ${id} no fue encontrada`)
     }
-    return "Locación eliminada exitosamente"
+    return { "msg": "Locación eliminada exitosamente" }//modificar a objeto json
 
   }
 
