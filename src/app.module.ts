@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LocationsModule } from './locations/locations.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
+import { CategoriesModule } from './categories/categories.module';
 
 
 @Module({
@@ -23,7 +24,10 @@ import { SeedModule } from './seed/seed.module';
     CommonModule,
 
 
-    SeedModule
+    SeedModule,
+
+
+    CategoriesModule
 
   ],
 

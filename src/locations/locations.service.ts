@@ -62,9 +62,9 @@ export class LocationsService {
     if (updateLocationDto.name) {
       updateLocationDto.name = updateLocationDto.name.toLowerCase()
     }
+    // updateLocationDto.modified_at = new Date().getTime()
 
     try {
-
       await location.updateOne(updateLocationDto)
       return { ...location.toJSON(), ...updateLocationDto }
 
@@ -72,19 +72,16 @@ export class LocationsService {
       console.log(error)
       this.handleExceptions(error)
     }
+    // return ({ location, updateLocationDto })
   }
 
   async remove(id: string) {
-    // const location = await this.findOne(id)
-    // await location.deleteOne()
-    // return "Registro eliminado exitosamente"
-    // return { id }
-    // const result = await this.locationModel.findByIdAndDelete(id)
+
     const { deletedCount, acknowledged } = await this.locationModel.deleteOne({ _id: id })
     if (deletedCount === 0) {
       throw new BadRequestException(`Locación con id ${id} no fue encontrada`)
     }
-    return { "msg": "Locación eliminada exitosamente" }//modificar a objeto json
+    return { "msg": "Locación eliminada exitosamente" }
 
   }
 

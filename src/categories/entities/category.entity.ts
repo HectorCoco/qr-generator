@@ -1,17 +1,14 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
 
 @Schema()
-export class Location extends Document {
-
-    // id: string generado por mongo
+export class Category {
 
     @Prop({
         unique: true,
         index: true,
         default: true,
     })
-    location_number: number
+    category_number: number
 
     @Prop({
         unique: true,
@@ -29,7 +26,6 @@ export class Location extends Document {
     @Prop({
         index: true,
         default: new Date().getTime(),
-
     })
     created_at: number
 
@@ -38,12 +34,7 @@ export class Location extends Document {
     })
     modified_at?: number
 
+
 }
 
-
-
-
-
-
-
-export const LocationSchema = SchemaFactory.createForClass(Location)
+export const CategorySchema = SchemaFactory.createForClass(Category)
