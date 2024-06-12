@@ -6,6 +6,8 @@ import { LocationsModule } from './locations/locations.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
 import { CategoriesModule } from './categories/categories.module';
+import { LinksModule } from './links/links.module';
+import { ImagesModule } from './images/images.module';
 
 
 @Module({
@@ -27,7 +29,13 @@ import { CategoriesModule } from './categories/categories.module';
     SeedModule,
 
 
-    CategoriesModule
+    CategoriesModule,
+
+
+    LinksModule,
+
+
+    ImagesModule
 
   ],
 

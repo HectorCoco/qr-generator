@@ -41,9 +41,4 @@ export class Location extends Document {
 }
 
 
-
-
-
-
-
 export const LocationSchema = SchemaFactory.createForClass(Location)

@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { Model, isValidObjectId } from 'mongoose';
 import { Location } from './entities/location.entity';
+import { Model, isValidObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
@@ -62,7 +62,6 @@ export class LocationsService {
     if (updateLocationDto.name) {
       updateLocationDto.name = updateLocationDto.name.toLowerCase()
     }
-    // updateLocationDto.modified_at = new Date().getTime()
 
     try {
       await location.updateOne(updateLocationDto)
@@ -78,18 +77,20 @@ export class LocationsService {
   async remove(id: string) {
 
     const { deletedCount, acknowledged } = await this.locationModel.deleteOne({ _id: id })
+
     if (deletedCount === 0) {
-      throw new BadRequestException(`Locación con id ${id} no fue encontrada`)
+      throw new BadRequestException(`Registro con id ${id} no fue encontrado`)
     }
+
     return { "msg": "Locación eliminada exitosamente" }
 
   }
 
   private handleExceptions(error: any) {
     if (error.code === 11000) {
-      throw new BadRequestException(`La locacion ya existen en la base de datos ${JSON.stringify(error.keyValue)}`)
+      throw new BadRequestException(`Ya existe registro en la base de datos ${JSON.stringify(error.keyValue)}`)
     }
-    throw new InternalServerErrorException(`Can't create location - Check in console for errors`)
+    throw new InternalServerErrorException(`No se puede crear el registro, favor de checar en consola`)
 
   }
 }
