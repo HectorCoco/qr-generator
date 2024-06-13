@@ -14,6 +14,7 @@ export class LinksService {
   ) { }
 
   async create(createLinkDto: CreateLinkDto) {
+  
     createLinkDto.name = createLinkDto.name.toLocaleLowerCase()
 
     try {

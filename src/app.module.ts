@@ -8,6 +8,7 @@ import { SeedModule } from './seed/seed.module';
 import { CategoriesModule } from './categories/categories.module';
 import { LinksModule } from './links/links.module';
 import { ImagesModule } from './images/images.module';
+import { DocumentsModule } from './documents/documents.module';
 
 
 @Module({
@@ -35,7 +36,10 @@ import { ImagesModule } from './images/images.module';
     LinksModule,
 
 
-    ImagesModule
+    ImagesModule,
+
+
+    DocumentsModule
 
   ],
 
