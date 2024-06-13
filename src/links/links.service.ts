@@ -14,7 +14,7 @@ export class LinksService {
   ) { }
 
   async create(createLinkDto: CreateLinkDto) {
-    createLinkDto.value = createLinkDto.value.toLocaleLowerCase()
+    createLinkDto.name = createLinkDto.name.toLocaleLowerCase()
 
     try {
 
@@ -27,8 +27,9 @@ export class LinksService {
     }
   }
 
-  findAll() {
-    return this.linkModel.find()
+  async findAll() {
+
+    return await this.linkModel.find()
   }
 
   async findOne(term: string) {

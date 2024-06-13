@@ -5,7 +5,7 @@ import { UpdateImageDto } from './dto/update-image.dto';
 
 @Controller('images')
 export class ImagesController {
-  constructor(private readonly imagesService: ImagesService) {}
+  constructor(private readonly imagesService: ImagesService) { }
 
   @Post()
   create(@Body() createImageDto: CreateImageDto) {
@@ -17,18 +17,18 @@ export class ImagesController {
     return this.imagesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.imagesService.findOne(+id);
+  @Get(':term')
+  findOne(@Param('term') term: string) {
+    return this.imagesService.findOne(term);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
-    return this.imagesService.update(+id, updateImageDto);
+  @Patch(':term')
+  update(@Param('term') term: string, @Body() updateImageDto: UpdateImageDto) {
+    return this.imagesService.update(term, updateImageDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.imagesService.remove(+id);
+    return this.imagesService.remove(id);
   }
 }

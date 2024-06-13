@@ -28,8 +28,8 @@ export class CategoriesService {
 
   }
 
-  findAll() {
-    return this.categoryModel.find()
+  async findAll() {
+    return await this.categoryModel.find()
   }
 
   async findOne(term: string) {

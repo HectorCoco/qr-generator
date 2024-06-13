@@ -29,8 +29,8 @@ export class LocationsService {
 
   }
 
-  findAll() {
-    return this.locationModel.find()
+  async findAll() {
+    return await this.locationModel.find()
   }
 
   async findOne(term: string) {

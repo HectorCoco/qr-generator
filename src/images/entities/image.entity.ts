@@ -5,21 +5,23 @@ import { Document } from "mongoose";
 export class Image extends Document {
 
     @Prop({
-        unique: true,
+        type: String,
+        unique: false,
         index: true,
     })
     name: string
 
     @Prop({
-        unique: true,
+        type: String,
+        unique: false,
         index: true,
     })
     image: string
 
     @Prop({
-        unique: true,
+        type: Number,
+        unique: false,
         index: true,
-        default: true,
     })
     order: number
 
