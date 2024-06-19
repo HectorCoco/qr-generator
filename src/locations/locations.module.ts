@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LocationsService } from './locations.service';
 import { LocationsController } from './locations.controller';
 import { Location, LocationSchema } from './entities/location.entity';
+import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
 
 @Module({
   controllers: [LocationsController],
@@ -12,7 +13,11 @@ import { Location, LocationSchema } from './entities/location.entity';
       {
         name: Location.name,
         schema: LocationSchema,
-      }
+      },
+      {
+        name: Qr.name,
+        schema: QrSchema,
+      },
     ])
   ],
   exports: [

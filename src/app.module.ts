@@ -9,6 +9,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { LinksModule } from './links/links.module';
 import { ImagesModule } from './images/images.module';
 import { DocumentsModule } from './documents/documents.module';
+import { QrsModule } from './qrs/qrs.module';
 
 
 @Module({
@@ -39,7 +40,10 @@ import { DocumentsModule } from './documents/documents.module';
     ImagesModule,
 
 
-    DocumentsModule
+    DocumentsModule,
+
+
+    QrsModule
 
   ],
 

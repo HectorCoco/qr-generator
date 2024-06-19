@@ -1,77 +1,151 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { CreateLocationDto } from './dto/create-location.dto';
-import { UpdateLocationDto } from './dto/update-location.dto';
-import { Location } from './entities/location.entity';
-import { Model, isValidObjectId } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { Model, isValidObjectId, Types } from 'mongoose';
+import { validateOrReject } from 'class-validator';
+
+import LocationResponseDTO from './dto/location-response.dto';
+import QrResponseDTO from 'src/qrs/dto/qr.response.dto';
+import { LocationDocument } from './entities/location.entity';
+import { QrDocument } from 'src/qrs/entities/qr.entity';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { CreateQrDto } from 'src/qrs/dto/create-qr.dto';
+import { UpdateLocationDto } from './dto/update-location.dto';
 
 @Injectable()
 export class LocationsService {
 
   constructor(
-    @InjectModel(Location.name)
-    private readonly locationModel: Model<Location>
+    @InjectModel('Location')
+    private readonly locationModel: Model<LocationDocument>,
+    @InjectModel('Qr')
+    private readonly qrModel: Model<QrDocument>
   ) { }
 
-  async create(createLocationDto: CreateLocationDto) {
+  // async create(createLocationDto: CreateLocationDto) {
 
-    createLocationDto.name = createLocationDto.name.toLocaleLowerCase()
+  //   createLocationDto.name = createLocationDto.name.toLocaleLowerCase()
 
+  //   try {
+
+  //     const location = await this.locationModel.create(createLocationDto)
+  //     return location
+
+  //   } catch (error) {
+  //     console.log(error)
+  //     this.handleExceptions(error)
+  //   }
+
+  // }
+
+  async create(createLocationDto: CreateLocationDto): Promise<LocationResponseDTO> {
+    await validateOrReject(createLocationDto)
     try {
-
-      const location = await this.locationModel.create(createLocationDto)
-      return location
-
+      const newLocation = new this.locationModel()
+      newLocation.location_number = createLocationDto.location_number;
+      newLocation.name = createLocationDto.name;
+      const location = await newLocation.save();
+      return LocationResponseDTO.from(location);
     } catch (error) {
       console.log(error)
       this.handleExceptions(error)
     }
-
   }
 
-  async findAll() {
-    return await this.locationModel.find()
+  async addQr(
+    id: string,
+    requestDto: CreateQrDto,
+  ): Promise<QrResponseDTO> {
+    await validateOrReject(requestDto);
+    try {
+      const newQr = new this.qrModel(requestDto);
+      console.log(newQr)
+      const _id = new Types.ObjectId(id);
+      const location = await this.locationModel.findById(_id).exec();
+      console.log(location);
+      newQr.location = location;
+      // newQr.creationDate = new Date().toISOString().slice(0, 10);
+      const qr = await newQr.save();
+      return QrResponseDTO.from(qr);
+    } catch (error) {
+      console.log(error)
+      this.handleExceptions(error)
+    }
   }
 
-  async findOne(term: string) {
+  async count(): Promise<number> {
 
-    let location: Location
+    try {
+      return await this.locationModel.countDocuments().exec();
 
-    if (!isNaN(+term)) {
-      location = await this.locationModel.findOne({ location_number: term })
+    } catch (error) {
+
+      console.log(error)
+      this.handleExceptions(error)
+
     }
-
-    // MongoID
-    if (!location && isValidObjectId(term)) {
-      location = await this.locationModel.findById(term)
-    }
-    // Name
-    if (!location) {
-      location = await this.locationModel.findOne({ name: term.toLowerCase().trim() })
-    }
-
-    if (!location) throw new NotFoundException(`Su busqueda no arroja ningun resultado`)
-
-    return location
   }
+
+  // async findAll() {
+  //   return await this.locationModel.find()
+  // }
+
+  async findAll(): Promise<Array<LocationResponseDTO>> {
+    try {
+      const locations = await this.locationModel.find().exec();
+      return locations.map(LocationResponseDTO.from);
+    } catch (error) {
+      console.log(error)
+      this.handleExceptions(error)
+    }
+  }
+
+  async findOne(id: string): Promise<LocationResponseDTO> {
+    const _id = new Types.ObjectId(id);
+    const location = await this.locationModel.findById(_id).exec();
+    return LocationResponseDTO.from(location);
+  }
+
+  // async findOne(term: string) {
+
+  //   let location: LocationDocument
+
+  //   if (!isNaN(+term)) {
+  //     location = await this.locationModel.findOne({ location_number: term })
+  //   }
+
+  //   // MongoID
+  //   if (!location && isValidObjectId(term)) {
+  //     location = await this.locationModel.findById(term)
+  //   }
+  //   // Name
+  //   if (!location) {
+  //     location = await this.locationModel.findOne({ name: term.toLowerCase().trim() })
+  //   }
+
+  //   if (!location) throw new NotFoundException(`Su busqueda no arroja ningun resultado`)
+
+  //   return location
+  // }
 
   async update(term: string, updateLocationDto: UpdateLocationDto) {
 
-    const location = await this.findOne(term)
 
-    if (updateLocationDto.name) {
-      updateLocationDto.name = updateLocationDto.name.toLowerCase()
-    }
+    return 'Hola'
+    // const location = await this.findOne(term)
 
-    try {
-      await location.updateOne(updateLocationDto)
-      return { ...location.toJSON(), ...updateLocationDto }
+    // if (updateLocationDto.name) {
+    //   updateLocationDto.name = updateLocationDto.name.toLowerCase()
+    // }
 
-    } catch (error) {
-      console.log(error)
-      this.handleExceptions(error)
-    }
-    // return ({ location, updateLocationDto })
+    // try {
+    //   await location.updateOne(updateLocationDto)
+    //   return { ...location.toJSON(), ...updateLocationDto }
+
+    // } catch (error) {
+    //   console.log(error)
+    //   this.handleExceptions(error)
+    // }
+    // // return ({ location, updateLocationDto })
   }
 
   async remove(id: string) {
