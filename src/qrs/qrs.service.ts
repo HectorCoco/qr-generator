@@ -18,10 +18,12 @@ export class QrsService {
     private readonly qrModel: Model<QrDocument>
   ) { }
 
-  // TODO Revisar el uso de any aca!!!!!!!!!!!!!!
-  async findQrsAndLocation(location: string): Promise<Array<any>> {
+  async findQrsAndLocation(location: string): Promise<Array<QrResponseDTO>> {
+
     try {
+
       let query = this.qrModel.find();
+
       if (location) {
         const locations = await this.locationModel
           .find()
@@ -29,14 +31,15 @@ export class QrsService {
           .regex(new RegExp(location, 'i'))
           .select('id')
           .exec();
-        console.log("locations ", locations);
-        query = query.where('location').in(locations.map((loc) => loc._id));
+        // console.log("locations ", locations);
+        query = query.where('location').in(locations.map((loc) => loc._id))
       }
-      const qrs = await query.populate('location').exec();
-      console.log("qrs", qrs);
-      return qrs;
+
+      const qrs = await query.populate('location').exec()
+      // console.log("qrs", qrs);
+      return qrs.map(QrResponseDTO.from)
     } catch (error) {
-      console.log(error);
+      console.log(error)
       this.handleExceptions(error)
     }
   }
@@ -50,12 +53,10 @@ export class QrsService {
     try {
 
       const newQr = new this.qrModel(createQrDto);
-      console.log(newQr)
+      // console.log(newQr)
       const _id = new Types.ObjectId(createQrDto.location);
       const location = await this.locationModel.findById(_id).exec();
-      // console.log(location);
       newQr.location = location;
-      // newQr.creationDate = new Date().toISOString().slice(0, 10);
       const qr = await newQr.save();
 
       return QrResponseDTO.from(qr);
@@ -74,16 +75,14 @@ export class QrsService {
 
     let qr: QrDocument
 
-    // if (!isNaN(+term)) {
-    //   qr = await this.qrModel.findOne({ location: term })
-    // }
     // MongoID
     if (!qr && isValidObjectId(term)) {
-      qr = await this.qrModel.findById(term)
+
+      qr = await this.qrModel.findById(term).populate('location')
     }
     // Name
     if (!qr) {
-      qr = await this.qrModel.findOne({ name: term.toLowerCase().trim() })
+      qr = await this.qrModel.findOne({ name: term.toLowerCase().trim() }).populate('location')
     }
 
     if (!qr) throw new NotFoundException(`Su busqueda no arroja ningun resultado`)
@@ -92,16 +91,33 @@ export class QrsService {
 
   }
 
-  async update(term: string, updateQrDto: UpdateQrDto) {
+  async update(term: string, updateQrDto: UpdateQrDto): Promise<any> {
 
     const qr = await this.findOne(term)
+
+    // console.log({ qr })
+
+    updateQrDto.modifiedAt = new Date().toISOString().split('T')[0].toString()
 
     if (updateQrDto.name) {
       updateQrDto.name = updateQrDto.name.toLowerCase()
     }
 
+    if (updateQrDto.location) {
+      const _id = new Types.ObjectId(updateQrDto.location);
+      const location = await this.locationModel.findById(_id).exec();
+
+      if (location) {
+        qr.location = location;
+      }
+
+    }
+
     try {
-      await qr.updateOne(updateQrDto)
+
+      await qr.save()
+      // await qr.updateOne(updateQrDto)
+
       return { ...qr.toJSON(), ...updateQrDto }
 
     } catch (error) {

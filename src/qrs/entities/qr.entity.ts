@@ -33,7 +33,8 @@ export class Qr extends Document {
 
     @Prop({
         required: false,
-        type: String
+        type: String,
+        default: "",
     })
     @IsString()
     modifiedAt?: string;

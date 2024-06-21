@@ -55,10 +55,10 @@ export class LocationsService {
     await validateOrReject(requestDto);
     try {
       const newQr = new this.qrModel(requestDto);
-      console.log(newQr)
+      // console.log(newQr)
       const _id = new Types.ObjectId(id);
       const location = await this.locationModel.findById(_id).exec();
-      console.log(location);
+      // console.log(location);
       newQr.location = location;
       // newQr.creationDate = new Date().toISOString().slice(0, 10);
       const qr = await newQr.save();

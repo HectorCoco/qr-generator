@@ -3,6 +3,7 @@ import { CategoriesService } from './categories.service';
 import { CategoriesController } from './categories.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Category, CategorySchema } from './entities/category.entity';
+import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
 
 @Module({
   controllers: [CategoriesController],
@@ -12,6 +13,10 @@ import { Category, CategorySchema } from './entities/category.entity';
       {
         name: Category.name,
         schema: CategorySchema,
+      },
+      {
+        name: Qr.name,
+        schema: QrSchema,
       }
     ])
   ],
