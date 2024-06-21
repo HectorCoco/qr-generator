@@ -41,7 +41,7 @@ export class LocationsService {
     await validateOrReject(createLocationDto)
     try {
       const newLocation = new this.locationModel()
-      newLocation.location_number = createLocationDto.location_number;
+      newLocation.locationNumber = createLocationDto.locationNumber;
       newLocation.name = createLocationDto.name;
       const location = await newLocation.save();
       return LocationResponseDTO.from(location);
@@ -51,10 +51,7 @@ export class LocationsService {
     }
   }
 
-  async addQr(
-    id: string,
-    requestDto: CreateQrDto,
-  ): Promise<QrResponseDTO> {
+  async addQr(id: string, requestDto: CreateQrDto,): Promise<QrResponseDTO> {
     await validateOrReject(requestDto);
     try {
       const newQr = new this.qrModel(requestDto);
@@ -65,7 +62,9 @@ export class LocationsService {
       newQr.location = location;
       // newQr.creationDate = new Date().toISOString().slice(0, 10);
       const qr = await newQr.save();
+
       return QrResponseDTO.from(qr);
+
     } catch (error) {
       console.log(error)
       this.handleExceptions(error)
@@ -110,7 +109,7 @@ export class LocationsService {
   //   let location: LocationDocument
 
   //   if (!isNaN(+term)) {
-  //     location = await this.locationModel.findOne({ location_number: term })
+  //     location = await this.locationModel.findOne({ locationNumer: term })
   //   }
 
   //   // MongoID

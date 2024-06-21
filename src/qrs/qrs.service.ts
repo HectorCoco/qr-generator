@@ -1,23 +1,24 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, isValidObjectId } from 'mongoose';
+import { Model, Types, isValidObjectId } from 'mongoose';
 import { CreateQrDto } from './dto/create-qr.dto';
-import { Qr, QrDocument } from './entities/qr.entity';
+import { QrDocument } from './entities/qr.entity';
 import { UpdateQrDto } from './dto/update-qr.dto';
-import { Location } from '../locations/entities/location.entity';
+import { LocationDocument } from '../locations/entities/location.entity';
 import QrResponseDTO from './dto/qr.response.dto';
+import { validateOrReject } from 'class-validator';
 
 @Injectable()
 export class QrsService {
 
   constructor(
     @InjectModel('Location')
-    private readonly locationModel: Model<Location>,
-    @InjectModel(Qr.name)
-    private readonly qrModel: Model<Qr>
+    private readonly locationModel: Model<LocationDocument>,
+    @InjectModel('Qr')
+    private readonly qrModel: Model<QrDocument>
   ) { }
 
-  // TODO Revisar el uso de any aca
+  // TODO Revisar el uso de any aca!!!!!!!!!!!!!!
   async findQrsAndLocation(location: string): Promise<Array<any>> {
     try {
       let query = this.qrModel.find();
@@ -28,7 +29,7 @@ export class QrsService {
           .regex(new RegExp(location, 'i'))
           .select('id')
           .exec();
-          console.log("locations ", locations);
+        console.log("locations ", locations);
         query = query.where('location').in(locations.map((loc) => loc._id));
       }
       const qrs = await query.populate('location').exec();
@@ -40,14 +41,24 @@ export class QrsService {
     }
   }
 
-  async create(createQrDto: CreateQrDto) {
+  async create(createQrDto: CreateQrDto): Promise<QrResponseDTO> {
+
+    await validateOrReject(createQrDto);
 
     createQrDto.name = createQrDto.name.toLocaleLowerCase()
 
     try {
 
-      const qr = await this.qrModel.create(createQrDto)
-      return qr
+      const newQr = new this.qrModel(createQrDto);
+      console.log(newQr)
+      const _id = new Types.ObjectId(createQrDto.location);
+      const location = await this.locationModel.findById(_id).exec();
+      // console.log(location);
+      newQr.location = location;
+      // newQr.creationDate = new Date().toISOString().slice(0, 10);
+      const qr = await newQr.save();
+
+      return QrResponseDTO.from(qr);
 
     } catch (error) {
       console.log(error)
@@ -61,7 +72,7 @@ export class QrsService {
 
   async findOne(term: string) {
 
-    let qr: Qr
+    let qr: QrDocument
 
     // if (!isNaN(+term)) {
     //   qr = await this.qrModel.findOne({ location: term })

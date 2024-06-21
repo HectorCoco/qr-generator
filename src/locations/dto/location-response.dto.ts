@@ -4,31 +4,31 @@ export default class LocationResponseDTO {
 
     constructor(
         public id: string,
-        public location_number: number,
+        public locationNumber: number,
         public name: string,
         public active: boolean,
-        public created_at: number,
-        public modified_at?: number,
+        public createdAt: string,
+        public modifiedAt?: string,
         public qrs?: Array<any>,
     ) { }
 
     static from = ({
 
         _id,
-        location_number,
+        locationNumber,
         name,
         active,
-        created_at,
-        modified_at,
+        createdAt,
+        modifiedAt,
         qrs,
     }: LocationDocument): LocationResponseDTO =>
         new LocationResponseDTO(
             _id.toHexString(),
-            location_number,
+            locationNumber,
             name,
             active,
-            created_at,
-            modified_at,
+            createdAt,
+            modifiedAt,
             qrs)
 
 

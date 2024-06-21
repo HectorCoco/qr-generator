@@ -12,7 +12,9 @@ export class CreateQrDto {
     name: string
 
 
+    @IsString()
     // @IsMongoId()
-    // location: Location
+    // @IsObject()
+    location: string
 
 }

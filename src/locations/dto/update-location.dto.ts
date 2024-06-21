@@ -6,5 +6,5 @@ export class UpdateLocationDto extends PartialType(CreateLocationDto) {
 
     // @IsInt()
     // @Min(1)
-    // modified_at: number
+    // modifiedAt: number
 }

@@ -21,12 +21,12 @@ export class SeedService {
 
     const locations = Locations
 
-    const dataToInsert: { location_number: number, name: string }[] = []
+    const dataToInsert: { locationNumber: number, name: string }[] = []
 
-    locations.forEach(({ location_number, name }) => {
+    locations.forEach(({ locationNumber, name }) => {
 
-      // const location = await this.locationModel.create({ location_number, name })
-      dataToInsert.push({ location_number, name })
+      // const location = await this.locationModel.create({ locationNumber, name })
+      dataToInsert.push({ locationNumber, name })
 
     });
 

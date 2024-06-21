@@ -1,4 +1,4 @@
-import { Controller,Query, Get, Post, Body, Patch, Param, Delete, UseInterceptors } from '@nestjs/common';
+import { Controller, Query, Get, Post, Body, Patch, Param, Delete, UseInterceptors } from '@nestjs/common';
 import { QrsService } from './qrs.service';
 import { CreateQrDto } from './dto/create-qr.dto';
 import { UpdateQrDto } from './dto/update-qr.dto';
@@ -11,15 +11,17 @@ export class QrsController {
   constructor(private readonly qrsService: QrsService) { }
 
   @Post()
-  create(@Body() createQrDto: CreateQrDto) {
+  create(
+    // @Param('id') id: string,
+    @Body() createQrDto: CreateQrDto): Promise<QrResponseDTO> {
     return this.qrsService.create(createQrDto);
   }
 
-  
+
   @Get()
   findAll(
     @Query('location') location: string,
-  ) : Promise<Array<QrResponseDTO>> {
+  ): Promise<Array<QrResponseDTO>> {
     return this.qrsService.findQrsAndLocation(location)
     //return this.qrsService.findAll();
   }

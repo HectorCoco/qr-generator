@@ -27,8 +27,7 @@ export class LocationsController {
   @Post(':id/qrs')
   addQr(
     @Param('id') id: string,
-    @Body() requestDto: CreateQrDto,
-  ): Promise<QrResponseDTO> {
+    @Body() requestDto: CreateQrDto,): Promise<QrResponseDTO> {
     return this.locationsService.addQr(id, requestDto);
   }
   @Get()

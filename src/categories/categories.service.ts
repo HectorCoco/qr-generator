@@ -60,7 +60,7 @@ export class CategoriesService {
     if (updateCategoryDto.name) {
       updateCategoryDto.name = updateCategoryDto.name.toLowerCase()
     }
-    // updateLocationDto.modified_at = new Date().getTime()
+    // updateLocationDto.modifiedAt = new Date().getTime()
 
     try {
       await category.updateOne(updateCategoryDto)

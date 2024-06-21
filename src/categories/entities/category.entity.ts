@@ -28,12 +28,12 @@ export class Category extends Document {
         index: true,
         default: new Date().getTime(),
     })
-    created_at: number
+    createdAt: number
 
     @Prop({
         index: true,
     })
-    modified_at?: number
+    modifiedAt?: number
 
 
 }

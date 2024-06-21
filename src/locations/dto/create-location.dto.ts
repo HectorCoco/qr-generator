@@ -6,7 +6,7 @@ export class CreateLocationDto {
     @IsInt()
     @IsPositive()
     @Min(1)
-    location_number: number
+    locationNumber: number
 
     @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     @IsString()

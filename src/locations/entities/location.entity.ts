@@ -10,40 +10,46 @@ export type LocationDocument = Location & Document<Types.ObjectId>
 export class Location extends Document {
 
     @Prop({
+        type: Number,
         unique: false,
-        index: true,
+        // index: true,
         default: true,
     })
     @IsNumber()
-    location_number: number
+    locationNumber: number
 
     @Prop({
+        type: String,
         unique: false,
-        index: true,
+        // index: true,
     })
     @IsString()
     name: string
 
 
     @Prop({
-        index: true,
+        type: Boolean,
+        // index: true,
         default: true,
     })
     @IsBoolean()
     active: boolean
 
     @Prop({
-        index: true,
-        default: new Date().getTime(),
+        type: String,
+        // index: true,
+        default: new Date().toISOString().split('T')[0]
     })
-    @IsNumber()
-    created_at: number
+    @IsString()
+    createdAt: string
 
     @Prop({
-        index: true,
+        type: String,
+        // index: true,
+        default: new Date().toISOString().split('T')[0]
     })
-    @IsNumber()
-    modified_at?: number
+    @IsString()
+    modifiedAt?: string
 
 
     @Prop({
