@@ -11,6 +11,10 @@ export class CreateQrDto {
     @MinLength(1)
     name: string
 
+    @IsString()
+    @MinLength(5)
+    qrUrl: string
+
 
     @IsString()
     // @IsMongoId()

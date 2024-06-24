@@ -8,14 +8,15 @@ import { LocationDocument } from '../locations/entities/location.entity';
 import QrResponseDTO from './dto/qr.response.dto';
 import { validateOrReject } from 'class-validator';
 
+
 @Injectable()
 export class QrsService {
 
   constructor(
+    @InjectModel('Qr')
+    private readonly qrModel: Model<QrDocument>,
     @InjectModel('Location')
     private readonly locationModel: Model<LocationDocument>,
-    @InjectModel('Qr')
-    private readonly qrModel: Model<QrDocument>
   ) { }
 
   async findQrsAndLocation(location: string): Promise<Array<QrResponseDTO>> {
@@ -82,13 +83,26 @@ export class QrsService {
     }
     // Name
     if (!qr) {
-      qr = await this.qrModel.findOne({ name: term.toLowerCase().trim() }).populate('location')
+      await this.qrModel.find({ name: { $regex: term.toLowerCase().trim(), $options: term } }).populate('location')
     }
 
     if (!qr) throw new NotFoundException(`Su busqueda no arroja ningun resultado`)
 
     return qr
 
+  }
+
+  async search(term: string): Promise<QrDocument[]> {
+
+    const qrs = await this.qrModel
+      .find({ name: { $regex: '.*' + term + '.*', $options: 'i' } })
+      .populate('location')
+      .limit(20)
+      .exec();
+
+    if (!qrs.length) throw new NotFoundException(`Su búsqueda no arrojó ningún resultado`);
+
+    return qrs;
   }
 
   async update(term: string, updateQrDto: UpdateQrDto): Promise<any> {

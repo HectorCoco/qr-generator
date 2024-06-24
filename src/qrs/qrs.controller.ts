@@ -30,6 +30,11 @@ export class QrsController {
   findOne(@Param('term') term: string) {
     return this.qrsService.findOne(term);
   }
+  
+  @Get('search/:term')
+  search(@Param('term') term: string) {
+    return this.qrsService.search(term);
+  }
 
   @Patch(':term')
   update(@Param('term') term: string, @Body() updateQrDto: UpdateQrDto) {

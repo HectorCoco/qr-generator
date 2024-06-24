@@ -29,7 +29,7 @@ export class Qr extends Document {
         default: new Date().toISOString().split('T')[0]
     })
     @IsString()
-    createdAt: string;
+    createdAt: string
 
     @Prop({
         required: false,
@@ -37,7 +37,14 @@ export class Qr extends Document {
         default: "",
     })
     @IsString()
-    modifiedAt?: string;
+    modifiedAt?: string
+
+    @Prop({
+        required: true,
+        type: String,
+    })
+    @IsString()
+    qrUrl: string
 
     @Prop({
         // required: true,
