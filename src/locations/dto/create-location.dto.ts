@@ -2,15 +2,15 @@ import { IsBoolean, IsInt, IsNotEmpty, IsPositive, IsString, Min, MinLength } fr
 
 export class CreateLocationDto {
 
-    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     @IsInt()
     @IsPositive()
     @Min(1)
+    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     locationNumber: number
 
-    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     @IsString()
     @MinLength(1)
+    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     name: string
 
 

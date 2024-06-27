@@ -1,40 +1,63 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
+import { IsBoolean, IsString } from "class-validator";
+import { QrDocument } from "src/qrs/entities/qr.entity";
 
-@Schema()
+export type CategoryDocument = Category & Document<Types.ObjectId>
+
+@Schema({ collection: 'categories' })
+
 export class Category extends Document {
 
     @Prop({
+        type: String,
         unique: true,
-        index: true,
+        // index: true,
         default: true,
     })
-    category_number: number
+    @IsString()
+    categoryType: string
 
     @Prop({
+        type: String,
         unique: true,
-        index: true,
+        // index: true,
     })
+    @IsString()
     name: string
 
 
     @Prop({
-        index: true,
+        type: Boolean,
+        // index: true,
         default: true,
     })
+    @IsBoolean()
     active: boolean
 
     @Prop({
-        index: true,
-        default: new Date().getTime(),
+        type: String,
+        // index: true,
+        default: new Date().toISOString().split('T')[0]
     })
-    createdAt: number
+    @IsString()
+    createdAt: string
 
     @Prop({
-        index: true,
+        type: String,
+        // index: true,
+        default: "",
     })
-    modifiedAt?: number
+    @IsString()
+    modifiedAt?: string
 
+    @Prop({
+        type: [{
+            type: Types.ObjectId,
+            ref: 'Qr'
+        }]
+    })
+    qrs: Array<QrDocument>
 
 }
 

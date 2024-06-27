@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Type } from "class-transformer";
-import { IsString, IsBoolean, IsObject } from 'class-validator';
 import { Document, Types } from "mongoose";
+import { IsString, IsBoolean, IsObject } from 'class-validator';
 import { LocationDocument } from "src/locations/entities/location.entity";
+import { CategoryDocument } from "src/categories/entities/category.entity";
 
 export type QrDocument = Qr & Document<Types.ObjectId>
 
@@ -16,6 +16,13 @@ export class Qr extends Document {
     })
     @IsString()
     name: string
+
+    @Prop({
+        required: true,
+        type: String,
+    })
+    @IsString()
+    qrUrl: string
 
     @Prop({
         type: Boolean
@@ -40,13 +47,6 @@ export class Qr extends Document {
     modifiedAt?: string
 
     @Prop({
-        required: true,
-        type: String,
-    })
-    @IsString()
-    qrUrl: string
-
-    @Prop({
         // required: true,
         type: Types.ObjectId,
         ref: 'Location'
@@ -54,18 +54,13 @@ export class Qr extends Document {
     @IsObject()
     location?: LocationDocument;
 
-    // @Prop({
-    //     type: [{
-    //         type: Types.ObjectId,
-    //         ref: Location.name
-    //     }],
-    //     ref: "Location",
-    //     unique: false,
-    //     required: true,
-    //     sparse: true
-    // })
-    // location: Location
-
+    @Prop({
+        // required: true,
+        type: Types.ObjectId,
+        ref: 'Category'
+    })
+    @IsObject()
+    category?: CategoryDocument;
 }
 
 export const QrSchema = SchemaFactory.createForClass(Qr)

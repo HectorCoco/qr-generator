@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, ObjectId, Types } from "mongoose";
+import { Document, Types } from "mongoose";
 import { IsBoolean, IsNumber, IsString } from "class-validator";
-import { QrDocument } from '../../qrs/entities/qr.entity';
+import { QrDocument } from 'src/qrs/entities/qr.entity';
 
 export type LocationDocument = Location & Document<Types.ObjectId>
 
@@ -46,7 +46,7 @@ export class Location extends Document {
     @Prop({
         type: String,
         // index: true,
-        default: new Date().toISOString().split('T')[0]
+        default: ""
     })
     @IsString()
     modifiedAt?: string

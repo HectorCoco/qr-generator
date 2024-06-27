@@ -1,10 +1,10 @@
-import { LocationDocument } from 'src/locations/entities/location.entity';
+import { CategoryDocument } from 'src/categories/entities/category.entity';
 
-export default class LocationResponseDTO {
+export default class CategoryResponseDTO {
 
     constructor(
         public id: string,
-        public locationNumber: number,
+        public categoryType: string,
         public name: string,
         public active: boolean,
         public createdAt: string,
@@ -14,16 +14,16 @@ export default class LocationResponseDTO {
 
     static from = ({
         _id,
-        locationNumber,
+        categoryType,
         name,
         active,
         createdAt,
         modifiedAt,
         qrs,
-    }: LocationDocument): LocationResponseDTO =>
-        new LocationResponseDTO(
+    }: CategoryDocument): CategoryResponseDTO =>
+        new CategoryResponseDTO(
             _id.toHexString(),
-            locationNumber,
+            categoryType,
             name,
             active,
             createdAt,

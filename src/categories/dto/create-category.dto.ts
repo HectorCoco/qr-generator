@@ -1,15 +1,16 @@
-import { IsString, MinLength, IsInt, IsPositive, Min } from 'class-validator';
+import { IsString, MinLength, IsInt, IsPositive, Min, IsNotEmpty } from 'class-validator';
 
 
 export class CreateCategoryDto {
 
-    @IsInt()
-    @IsPositive()
-    @Min(1)
-    category_number: number
+    @IsString()
+    @MinLength(1)
+    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
+    categoryType: string
 
     @IsString()
     @MinLength(1)
+    @IsNotEmpty({ message: 'La propiedad del campo es incorrecta' })
     name: string
 
 }

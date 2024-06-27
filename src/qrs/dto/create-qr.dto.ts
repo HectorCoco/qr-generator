@@ -1,8 +1,5 @@
 import { IsArray, IsMongoId, IsNotEmpty, IsObject, IsString, MinLength, ValidateNested } from "class-validator";
-import { Type } from "class-transformer";
-import { Location } from "src/locations/entities/location.entity";
-import { UpdateQrDto } from './update-qr.dto';
-import { OmitType, PartialType } from "@nestjs/mapped-types";
+
 
 
 export class CreateQrDto {
@@ -20,5 +17,10 @@ export class CreateQrDto {
     // @IsMongoId()
     // @IsObject()
     location: string
+
+    @IsString()
+    // @IsMongoId()
+    // @IsObject()
+    category: string
 
 }
