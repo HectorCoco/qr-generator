@@ -12,7 +12,7 @@ export class Qr extends Document {
     @Prop({
         type: String,
         unique: true,
-        // index: true
+        index: true
     })
     @IsString()
     name: string
@@ -52,7 +52,7 @@ export class Qr extends Document {
         ref: 'Location'
     })
     @IsObject()
-    location?: LocationDocument;
+    location?: LocationDocument
 
     @Prop({
         // required: true,
@@ -60,7 +60,13 @@ export class Qr extends Document {
         ref: 'Category'
     })
     @IsObject()
-    category?: CategoryDocument;
+    category?: CategoryDocument
+
+    @Prop({
+        type: []
+    })
+    @IsObject()
+    qrData?: []
 }
 
 export const QrSchema = SchemaFactory.createForClass(Qr)

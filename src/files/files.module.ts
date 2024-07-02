@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ImagesService } from './images.service';
-import { ImagesController } from './images.controller';
-import { Image, ImageSchema } from './entities/image.entity';
+import { FilesService } from './files.service';
+import { FilesController } from './files.controller';
+import { File, FileSchema } from 'src/files/entities/file.entity';
 import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
 
 @Module({
-  controllers: [ImagesController],
-  providers: [ImagesService],
+  controllers: [FilesController],
+  providers: [FilesService],
   imports: [
     MongooseModule.forFeature([
       {
-        name: Image.name,
-        schema: ImageSchema,
+        name: File.name,
+        schema: FileSchema
       },
       {
         name: Qr.name,
@@ -24,4 +24,4 @@ import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
     MongooseModule
   ],
 })
-export class ImagesModule { }
+export class FilesModule { }

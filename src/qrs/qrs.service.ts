@@ -1,14 +1,17 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types, isValidObjectId } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { validateOrReject } from 'class-validator';
 import QrResponseDTO from './dto/qr-response.dto';
 import { CreateQrDto } from './dto/create-qr.dto';
 import { QrDocument } from './entities/qr.entity';
 import { UpdateQrDto } from './dto/update-qr.dto';
-import { LocationDocument } from '../locations/entities/location.entity';
 import { CategoryDocument } from 'src/categories/entities/category.entity';
 import { handleExceptions } from 'src/common/helpers/handle-exceptions.helper';
+import { generateSlug } from 'src/common/helpers/strings.helpers';
+import { LocationDocument } from '../locations/entities/location.entity';
+import { ImageDocument } from 'src/images/entities/image.entity';
+import { FileDocument } from 'src/files/entities/file.entity';
 
 
 @Injectable()
@@ -21,8 +24,15 @@ export class QrsService {
     private readonly locationModel: Model<LocationDocument>,
     @InjectModel('Category')
     private readonly categoryModel: Model<CategoryDocument>,
+    @InjectModel('Image')
+    private readonly imageModel: Model<ImageDocument>,
+    @InjectModel('File')
+    private readonly fileModel: Model<FileDocument>,
+    // @InjectModel('Link')
+    // private readonly linkModel: Model<LinkDocument>,
   ) { }
 
+  // ----------------------------------------
   async create(createQrDto: CreateQrDto): Promise<QrResponseDTO> {
 
     await validateOrReject(createQrDto)
@@ -32,12 +42,16 @@ export class QrsService {
     try {
 
       const newQr = new this.qrModel(createQrDto)
+      newQr.qrUrl = generateSlug(12)
+
       const _idLocation = new Types.ObjectId(createQrDto.location)
-      const _idCategory = new Types.ObjectId(createQrDto.category)
       const location = await this.locationModel.findById(_idLocation).exec()
-      const category = await this.categoryModel.findById(_idCategory).exec()
       newQr.location = location
+
+      const _idCategory = new Types.ObjectId(createQrDto.category)
+      const category = await this.categoryModel.findById(_idCategory).exec()
       newQr.category = category
+
       const qr = await newQr.save()
 
       return QrResponseDTO.from(qr)
@@ -48,65 +62,15 @@ export class QrsService {
     }
   }
 
+
+  //Sustituido en el controlador por el metodo findQrsWithFilters
   async findAll() {
 
     return await this.qrModel.find()
   }
 
-  async findQrsWithFilters(
-    location?: string,
-    category?: string
-  ): Promise<Array<QrResponseDTO>> {
-
-    try {
-      let query = this.qrModel.find();
-
-      if (!location && !category) {
-
-        return []
-      }
-
-      if (location) {
-        const locations = await this.locationModel
-          .find({ name: { $regex: new RegExp(location, 'i') } })
-          .select('_id')
-          .exec()
-
-        if (locations.length > 0) {
-          query = query.where('location').in(locations.map((loc) => loc._id))
-        } else {
-
-          // Si no hay coincidencias para location, devuelve un array vacío
-          return []
-        }
-      }
-
-      if (category) {
-        const categories = await this.categoryModel
-          .find({ name: { $regex: new RegExp(category, 'i') } })
-          .select('_id')
-          .exec()
-
-        if (categories.length > 0) {
-          query = query.where('category').in(categories.map((cat) => cat._id))
-        } else {
-
-          // Si no hay coincidencias para category, devuelve un array vacío
-          return []
-        }
-      }
-
-      const qrs = await query.populate('location').populate('category').exec()
-
-      return qrs.map(QrResponseDTO.from)
-
-    } catch (error) {
-      console.log(error)
-      handleExceptions(error)
-    }
-  }
-
-  async findOne(term: string): Promise<QrDocument> {
+  // ----------------------------------------
+  async findOne(term: string): Promise<any> {
 
     const isMongoId = Types.ObjectId.isValid(term)
     let qr: QrDocument | null
@@ -128,10 +92,80 @@ export class QrsService {
       throw new NotFoundException(`registro con el parametro ${term} no ha sido encontrado`)
     }
 
-    return qr
+
+    const qrId = qr.id
+    const qrCategory = qr.category.categoryType
+    const results = await this.getDataType(qrId, qrCategory)
+    const qrDto = QrResponseDTO.from(qr)
+
+
+    qrDto.qrData.push(results)
+
+
+    return qrDto
   }
 
-  async search(term: string): Promise<QrDocument[]> {
+  // ----------------------------------------
+  async update(term: string, updateQrDto: UpdateQrDto): Promise<QrResponseDTO> {
+
+    const qr = await this.findOne(term);
+
+    if (!qr) {
+      throw new NotFoundException(`Registro con el parámetro ${term} no ha sido encontrado`);
+    }
+
+    updateQrDto.modifiedAt = new Date().toISOString().split('T')[0].toString();
+
+    if (updateQrDto.name) {
+      updateQrDto.name = updateQrDto.name.toLowerCase();
+    }
+
+    if (updateQrDto.location) {
+      const _idLocation = new Types.ObjectId(updateQrDto.location)
+      const location = await this.locationModel.findById(_idLocation).exec()
+
+      qr.location = location
+    }
+
+    if (updateQrDto.category) {
+      const _idCategory = new Types.ObjectId(updateQrDto.category)
+      const category = await this.categoryModel.findById(_idCategory).exec()
+
+      qr.category = category
+    }
+
+    try {
+      Object.keys(updateQrDto).forEach((key) => {
+        if (key !== '_id' && key !== 'location' && key !== 'category') {
+          qr.set(key, updateQrDto[key]);
+        }
+      });
+
+      const updatedQr = await qr.save();
+
+      return QrResponseDTO.from(updatedQr);
+
+    } catch (error) {
+      console.log(error);
+      handleExceptions(error);
+    }
+  }
+
+  // ----------------------------------------
+  async remove(id: string) {
+
+    const { deletedCount, acknowledged } = await this.qrModel.deleteOne({ _id: id })
+
+    if (deletedCount === 0) {
+      throw new BadRequestException(`Registro con id ${id} no fue encontrado`)
+    }
+
+    return { "msg": "Locación eliminada exitosamente" }
+
+  }
+
+  // ----------------------------------------
+  async search(term: string): Promise<Array<QrDocument>> {
 
     const qrs = await this.qrModel
       .find({ name: { $regex: '.*' + term + '.*', $options: 'i' } })
@@ -144,64 +178,87 @@ export class QrsService {
 
     return qrs
   }
-
-  async update(term: string, updateQrDto: UpdateQrDto): Promise<QrResponseDTO> {
-
-    const qr = await this.findOne(term)
-
-    if (!qr) {
-      throw new NotFoundException(`registro con el parametro ${term} no ha sido encontrado`)
-    }
-
-    updateQrDto.modifiedAt = new Date().toISOString().split('T')[0].toString()
-
-    if (updateQrDto.name) {
-      updateQrDto.name = updateQrDto.name.toLowerCase()
-    }
-
-    if (updateQrDto.location) {
-
-      const _idLoc = new Types.ObjectId(updateQrDto.location)
-      const location = await this.locationModel.findById(_idLoc).exec()
+  // ----------------------------------------
+  async findQrsWithFilters(
+    location?: string,
+    category?: string
+  ): Promise<Array<QrResponseDTO>> {
+    try {
+      let query = this.qrModel.find();
 
       if (location) {
-        qr.location = location
+        const locations = await this.locationModel
+          .find({ name: { $regex: new RegExp(location, 'i') } })
+          .select('_id')
+          .exec()
+
+        if (locations.length > 0) {
+          query = query.where('location').in(locations.map((loc) => loc._id));
+        } else {
+          return []
+        }
       }
-    }
-
-    if (updateQrDto.category) {
-
-      const _idCat = new Types.ObjectId(updateQrDto.category)
-      const category = await this.categoryModel.findById(_idCat).exec()
 
       if (category) {
-        qr.category = category
+        const categories = await this.categoryModel
+          .find({ name: { $regex: new RegExp(category, 'i') } })
+          .select('_id')
+          .exec()
+
+        if (categories.length > 0) {
+          query = query.where('category').in(categories.map((cat) => cat._id));
+        } else {
+          return []
+        }
       }
 
-    }
+      const qrs = await query
+        .populate('location')
+        .populate('category')
+        .exec()
 
-    try {
-      Object.assign(qr, updateQrDto)
-      const updatedQr = await qr.save()
+      const qrPromises = qrs.map(async qr => {
+        const { _id: id, category: { categoryType } } = qr
+        const qrDto = QrResponseDTO.from(qr)
 
-      return QrResponseDTO.from(qr)
+        const result = await this.getDataType(id, categoryType)
+        qrDto.qrData = result
+
+        return qrDto
+
+      })
+
+      const qrDtos = await Promise.all(qrPromises)
+
+      return qrDtos
 
     } catch (error) {
-      console.log(error)
-      handleExceptions(error)
+      console.log(error);
+      handleExceptions(error);
     }
   }
 
-  async remove(id: string) {
+  // ----------------------------------------
+  async getDataType(id, categoryType: string) {
 
-    const { deletedCount, acknowledged } = await this.qrModel.deleteOne({ _id: id })
+    if (categoryType === 'images') {
+      const images = await this.imageModel
+        .find({ qr: id })
+        .sort({ order: 1 })
+        .exec()
+      return images.map(image => ({ value: image.imageReference, order: image.order }))
 
-    if (deletedCount === 0) {
-      throw new BadRequestException(`Registro con id ${id} no fue encontrado`)
+    } else if (categoryType === 'documents') {
+      const documents = await this.fileModel
+        .find({ qr: id })
+        .exec()
+
+      return documents.map(document => ({ doc: document.name, value: document.documentReference }))
+
+    } else {
+
+      return {}
     }
-
-    return { "msg": "Locación eliminada exitosamente" }
-
   }
 
 }

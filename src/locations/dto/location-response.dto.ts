@@ -28,6 +28,7 @@ export default class LocationResponseDTO {
             active,
             createdAt,
             modifiedAt,
-            qrs)
+            qrs
+        )
 
 }

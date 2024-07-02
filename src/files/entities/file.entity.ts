@@ -1,34 +1,27 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsBoolean, IsNumber, IsObject, IsString } from "class-validator";
 import { Document, Types } from "mongoose";
+import { IsBoolean, IsObject, IsString } from "class-validator";
 import { QrDocument } from "src/qrs/entities/qr.entity";
 
 
-export type ImageDocument = Image & Document<Types.ObjectId>
+export type FileDocument = File & Document<Types.ObjectId>
 
-@Schema({ collection: 'images' })
-export class Image extends Document {
+@Schema({ collection: 'files' })
+export class File extends Document {
 
     @Prop({
-        type: String,
+        required: true,
         unique: false,
     })
     @IsString()
     name: string
 
     @Prop({
+        // required: true,
         type: String,
-        unique: false,
     })
     @IsString()
-    imageReference: string
-
-    @Prop({
-        type: Number,
-        unique: false,
-    })
-    @IsNumber()
-    order: number
+    documentReference: string
 
     @Prop({
         type: Boolean
@@ -62,4 +55,4 @@ export class Image extends Document {
 }
 
 
-export const ImageSchema = SchemaFactory.createForClass(Image)
+export const FileSchema = SchemaFactory.createForClass(File)

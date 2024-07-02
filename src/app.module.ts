@@ -8,7 +8,7 @@ import { SeedModule } from './seed/seed.module';
 import { CategoriesModule } from './categories/categories.module';
 import { LinksModule } from './links/links.module';
 import { ImagesModule } from './images/images.module';
-import { DocumentsModule } from './documents/documents.module';
+import { FilesModule } from './files/files.module';
 import { QrsModule } from './qrs/qrs.module';
 
 
@@ -19,7 +19,7 @@ import { QrsModule } from './qrs/qrs.module';
     }),
 
 
-    MongooseModule.forRoot('mongodb://localhost:27017/qrs-generator'),
+    MongooseModule.forRoot('mongodb://localhost:27017/qrs-generator?compressors=snappy,zlib'),
 
 
     LocationsModule,
@@ -40,7 +40,7 @@ import { QrsModule } from './qrs/qrs.module';
     ImagesModule,
 
 
-    DocumentsModule,
+    FilesModule,
 
 
     QrsModule
