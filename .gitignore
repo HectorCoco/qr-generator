@@ -3,7 +3,6 @@
 /node_modules
 /build
 /mongo
-/src/s3-credentials.ts
 
 
 # Logs
