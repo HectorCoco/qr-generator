@@ -12,7 +12,7 @@ export class ImagesController {
   create(
     @Body() createImageDto: CreateImageDto): Promise<ImageResponseDTO> {
 
-    return this.imagesService.create(createImageDto);
+    return this.imagesService.create(createImageDto)
   }
 
   @Get()
@@ -39,4 +39,5 @@ export class ImagesController {
   remove(@Param('id') id: string) {
     return this.imagesService.remove(id);
   }
+  
 }

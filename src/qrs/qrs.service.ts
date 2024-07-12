@@ -2,16 +2,17 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { validateOrReject } from 'class-validator';
-import QrResponseDTO from './dto/qr-response.dto';
 import { CreateQrDto } from './dto/create-qr.dto';
 import { QrDocument } from './entities/qr.entity';
 import { UpdateQrDto } from './dto/update-qr.dto';
-import { CategoryDocument } from 'src/categories/entities/category.entity';
+import QrResponseDTO from './dto/qr-response.dto';
 import { handleExceptions } from 'src/common/helpers/handle-exceptions.helper';
 import { generateSlug } from 'src/common/helpers/strings.helpers';
 import { LocationDocument } from '../locations/entities/location.entity';
+import { CategoryDocument } from 'src/categories/entities/category.entity';
 import { ImageDocument } from 'src/images/entities/image.entity';
 import { FileDocument } from 'src/files/entities/file.entity';
+import { LinkDocument } from 'src/links/entities/link.entity';
 
 
 @Injectable()
@@ -28,8 +29,8 @@ export class QrsService {
     private readonly imageModel: Model<ImageDocument>,
     @InjectModel('File')
     private readonly fileModel: Model<FileDocument>,
-    // @InjectModel('Link')
-    // private readonly linkModel: Model<LinkDocument>,
+    @InjectModel('Link')
+    private readonly linkModel: Model<LinkDocument>,
   ) { }
 
   // ----------------------------------------
@@ -37,11 +38,12 @@ export class QrsService {
 
     await validateOrReject(createQrDto)
 
-    createQrDto.name = createQrDto.name.toLocaleLowerCase()
-
     try {
 
       const newQr = new this.qrModel(createQrDto)
+
+      newQr.name = createQrDto.name.toLocaleLowerCase()
+
       newQr.qrUrl = generateSlug(12)
 
       const _idLocation = new Types.ObjectId(createQrDto.location)
@@ -61,7 +63,6 @@ export class QrsService {
       handleExceptions(error)
     }
   }
-
 
   //Sustituido en el controlador por el metodo findQrsWithFilters
   async findAll() {
@@ -239,7 +240,7 @@ export class QrsService {
   }
 
   // ----------------------------------------
-  async getDataType(id, categoryType: string) {
+  async getDataType(id: Types.ObjectId, categoryType: string) {
 
     if (categoryType === 'images') {
       const images = await this.imageModel
@@ -260,5 +261,13 @@ export class QrsService {
       return {}
     }
   }
+
+  // async uploadFile(file: Express.Multer.File) {
+  //   const bucketName = "tickets-bucket-service";
+  //   const key = file.originalname;
+  //   const fileContent = file.buffer;
+
+  //   return this.s3Service.uploadFileToS3(bucketName, key, fileContent);
+  // }
 
 }

@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LinksService } from './links.service';
 import { LinksController } from './links.controller';
 import { Link, LinkSchema } from './entities/link.entity';
+import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
 
 @Module({
   controllers: [LinksController],
@@ -12,7 +13,11 @@ import { Link, LinkSchema } from './entities/link.entity';
       {
         name: Link.name,
         schema: LinkSchema,
-      }
+      },
+      {
+        name: Qr.name,
+        schema: QrSchema,
+      },
     ])
   ],
   exports: [

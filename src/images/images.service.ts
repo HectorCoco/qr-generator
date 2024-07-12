@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
-import { Image, ImageDocument } from './entities/image.entity';
+import { ImageDocument } from './entities/image.entity';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { QrDocument } from 'src/qrs/entities/qr.entity';
@@ -19,23 +19,24 @@ export class ImagesService {
     private readonly qrModel: Model<QrDocument>,
   ) { }
 
+  // -----------------------------------------------------
   async create(createImageDto: CreateImageDto): Promise<ImageResponseDTO> {
 
     await validateOrReject(createImageDto)
 
-    createImageDto.name = createImageDto.name.toLocaleLowerCase()
 
     try {
       const newImage = await this.imageModel.create(createImageDto)
+      newImage.name = createImageDto.name.toLocaleLowerCase()
       const _idQr = new Types.ObjectId(createImageDto.qr)
       const qr = await this.qrModel.findById(_idQr).exec()
+
       newImage.qr = qr
 
       const image = await newImage.save()
 
       return ImageResponseDTO.from(image)
     }
-
     catch (error) {
       console.log(error)
       handleExceptions(error)
@@ -43,11 +44,13 @@ export class ImagesService {
 
   }
 
+  // -----------------------------------------------------
   async findAll() {
 
     return await this.imageModel.find()
   }
 
+  // -----------------------------------------------------
   async findImagesWithFilters(
     qr?: string,
   ): Promise<Array<ImageResponseDTO>> {
@@ -87,6 +90,7 @@ export class ImagesService {
     }
   }
 
+  // -----------------------------------------------------
   async findOne(term: string): Promise<ImageDocument> {
 
     const isMongoId = Types.ObjectId.isValid(term)
@@ -111,6 +115,7 @@ export class ImagesService {
     return image
   }
 
+  // -----------------------------------------------------
   async update(term: string, updateImageDto: UpdateImageDto): Promise<ImageResponseDTO> {
 
     const image = await this.findOne(term)
@@ -123,6 +128,9 @@ export class ImagesService {
 
     if (updateImageDto.name) {
       updateImageDto.name = updateImageDto.name.toLowerCase()
+    }
+    if (updateImageDto.imageReference) {
+      updateImageDto.name = updateImageDto.name
     }
 
     if (updateImageDto.qr) {
@@ -151,7 +159,7 @@ export class ImagesService {
     }
   }
 
-
+  // -----------------------------------------------------
   async remove(id: string) {
     const { deletedCount, acknowledged } = await this.imageModel.deleteOne({ _id: id })
 

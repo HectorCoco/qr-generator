@@ -1,4 +1,4 @@
-import { ImageDocument } from '../entities/image.entity';
+import { ImageDocument } from 'src/images/entities/image.entity';
 import { QrDocument } from "src/qrs/entities/qr.entity";
 
 export default class ImageResponseDTO {
@@ -15,25 +15,17 @@ export default class ImageResponseDTO {
 
     ) { }
     // Static method to convert a PostDocument to a PostResponseDTO instance
-    static from = ({
-        _id,
-        name,
-        imageReference,
-        order,
-        active,
-        createdAt,
-        modifiedAt,
-        qr,
-    }: ImageDocument): ImageResponseDTO =>
-        new ImageResponseDTO(
-            // Convert MongoDB ObjectId to its hexadecimal representation
-            _id.toString(),
-            name,
-            imageReference,
-            order,
-            active,
-            createdAt,
-            modifiedAt,
-            qr,
+    static from(image: ImageDocument): ImageResponseDTO { // Añadir un parámetro images que es un array
+
+        return new ImageResponseDTO(
+            image._id.toString(),
+            image.name,
+            image.imageReference,
+            image.order,
+            image.active,
+            image.createdAt,
+            image.modifiedAt,
+            image.qr
         )
+    }
 }

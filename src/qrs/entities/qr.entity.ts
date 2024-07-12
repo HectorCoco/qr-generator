@@ -3,6 +3,7 @@ import { Document, Types } from "mongoose";
 import { IsString, IsBoolean, IsObject } from 'class-validator';
 import { LocationDocument } from "src/locations/entities/location.entity";
 import { CategoryDocument } from "src/categories/entities/category.entity";
+import { ImageDocument } from "src/images/entities/image.entity";
 
 export type QrDocument = Qr & Document<Types.ObjectId>
 
@@ -62,11 +63,19 @@ export class Qr extends Document {
     @IsObject()
     category?: CategoryDocument
 
+
     @Prop({
-        type: []
+        type: Types.ObjectId,
+        ref: 'Image'
     })
     @IsObject()
-    qrData?: []
+    image: ImageDocument
+
+    @Prop({
+        type: Array<any>
+    })
+    @IsObject()
+    qrData?: Array<any>
 }
 
 export const QrSchema = SchemaFactory.createForClass(Qr)

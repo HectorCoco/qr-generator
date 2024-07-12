@@ -1,4 +1,4 @@
-import { Controller, Query, Get, Post, Body, Patch, Param, Delete, UseInterceptors } from '@nestjs/common';
+import { Controller, Query, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { QrsService } from './qrs.service';
 import { CreateQrDto } from './dto/create-qr.dto';
 import { UpdateQrDto } from './dto/update-qr.dto';
@@ -16,6 +16,7 @@ export class QrsController {
     @Body() createQrDto: CreateQrDto): Promise<QrResponseDTO> {
 
     return this.qrsService.create(createQrDto)
+
   }
 
 
@@ -51,4 +52,22 @@ export class QrsController {
 
     return this.qrsService.remove(id)
   }
+
+  // @Post()
+  // testUpload(
+  //   @Body() test: any) {
+  //   const bucketName = "tickets-bucket-service";
+  //   const key = "PLDl2+3avPoMLcOZadv1xjwXsehl+fjLV8WP6CVL";
+  //   // AKIAT5EP7DKSMVBJDXAR
+  //   const fileContent = "This is the content of my file";
+
+  //   uploadFileToS3(bucketName, key, fileContent)
+  //   // return ""
+  // }
+
+  // @Post('upload')
+  // @UseInterceptors(FileInterceptor('file'))
+  // async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  //   return this.qrsService.uploadFile(file);
+  // }
 }

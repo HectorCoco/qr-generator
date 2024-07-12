@@ -1,7 +1,6 @@
 import { LocationDocument } from 'src/locations/entities/location.entity';
 import { QrDocument } from '../entities/qr.entity';
 import { CategoryDocument } from 'src/categories/entities/category.entity';
-import { ImageDocument } from 'src/images/entities/image.entity';
 
 export default class QrResponseDTO {
     constructor(
@@ -16,7 +15,7 @@ export default class QrResponseDTO {
         public qrData: any,
     ) { }
 
-    static from(qr: QrDocument): QrResponseDTO { // Añadir un parámetro images que es un array
+    static from(qr: QrDocument): QrResponseDTO {
 
         return new QrResponseDTO(
             qr._id.toString(),

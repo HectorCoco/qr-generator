@@ -10,6 +10,7 @@ import { LinksModule } from './links/links.module';
 import { ImagesModule } from './images/images.module';
 import { FilesModule } from './files/files.module';
 import { QrsModule } from './qrs/qrs.module';
+import { S3Module } from './s3/s3.module';
 
 
 @Module({
@@ -43,7 +44,11 @@ import { QrsModule } from './qrs/qrs.module';
     FilesModule,
 
 
-    QrsModule
+    QrsModule,
+
+
+    S3Module,
+
 
   ],
 
