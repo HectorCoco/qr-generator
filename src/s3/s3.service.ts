@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Credentials } from 'src/s3-credentials';
 
 @Injectable()
@@ -7,16 +7,17 @@ export class S3Service {
     private readonly s3Client: S3Client;
 
     constructor() {
-        const credentials = s3Credentials()
+        const _s3Credentials = s3Credentials()
         this.s3Client = new S3Client({
-            region: credentials.region, // Reemplaza con tu región de AWS
+            region: _s3Credentials.region,
             credentials: {
-                accessKeyId: credentials.credentials.accessKeyId, // Reemplaza con tu access key
-                secretAccessKey: credentials.credentials.secretAccessKey, // Reemplaza con tu secret key
+                accessKeyId: _s3Credentials.credentials.accessKeyId,
+                secretAccessKey: _s3Credentials.credentials.secretAccessKey,
             },
-        });
+        })
     }
 
+    // Método para almacenar un archivo en S3
     async uploadFile(file: Express.Multer.File): Promise<any> {
 
         const bucketName = "tickets-bucket-service"
@@ -42,4 +43,24 @@ export class S3Service {
         }
         return uploadResult
     }
+
+    // Método para eliminar un archivo de S3
+    async deleteFile(key: string): Promise<void> {
+        const bucketName = 'tickets-bucket-service';
+
+        const params = {
+            Bucket: bucketName,
+            Key: key,
+        };
+
+        try {
+            const command = new DeleteObjectCommand(params);
+            await this.s3Client.send(command);
+            console.log(`File ${key} deleted from S3`);
+        } catch (error) {
+            console.error('Error deleting file from S3', error);
+            throw new InternalServerErrorException('Error deleting file from S3');
+        }
+    }
+
 }

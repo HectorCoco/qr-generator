@@ -1,18 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import ImageResponseDTO from './dto/image-response.dto';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('images')
 export class ImagesController {
-  constructor(private readonly imagesService: ImagesService) { }
+  constructor(
+    private readonly imagesService: ImagesService
+  ) { }
 
   @Post()
-  create(
-    @Body() createImageDto: CreateImageDto): Promise<ImageResponseDTO> {
+  @UseInterceptors(FileInterceptor('file'))
+  async create(
+    @Body() createImageDto: CreateImageDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ImageResponseDTO> {
 
-    return this.imagesService.create(createImageDto)
+    return this.imagesService.create(createImageDto, file);
   }
 
   @Get()
@@ -29,15 +35,19 @@ export class ImagesController {
     return this.imagesService.findOne(term)
   }
 
-  @Patch(':term')
-  update(@Param('term') term: string, @Body() updateImageDto: UpdateImageDto): Promise<ImageResponseDTO> {
-
-    return this.imagesService.update(term, updateImageDto)
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
+  async update(
+    @Param('id') id: string,
+    @Body() updateImageDto: UpdateImageDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ImageResponseDTO> {
+    return this.imagesService.update(id, updateImageDto, file);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.imagesService.remove(id);
   }
-  
+
 }

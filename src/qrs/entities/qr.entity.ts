@@ -26,7 +26,9 @@ export class Qr extends Document {
     qrUrl: string
 
     @Prop({
-        type: Boolean
+        type: Boolean,
+        default: true,
+
     })
     @IsBoolean()
     active: boolean

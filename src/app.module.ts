@@ -11,6 +11,7 @@ import { ImagesModule } from './images/images.module';
 import { FilesModule } from './files/files.module';
 import { QrsModule } from './qrs/qrs.module';
 import { S3Module } from './s3/s3.module';
+import { FileUploadModule } from './file-upload/file-upload.module';
 
 
 @Module({
@@ -50,6 +51,7 @@ import { S3Module } from './s3/s3.module';
     S3Module,
 
 
+    FileUploadModule,
   ],
 
 })

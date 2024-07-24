@@ -7,7 +7,7 @@ export default class ImageResponseDTO {
         public _id: string,
         public name: string,
         public imageReference: string,
-        public order: number,
+        public order: any,
         public active: boolean,
         public createdAt: string,
         public modifiedAt: string,

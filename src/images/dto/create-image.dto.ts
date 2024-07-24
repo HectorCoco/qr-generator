@@ -1,22 +1,25 @@
+import { Transform } from "class-transformer";
 import { IsInt, IsMongoId, IsPositive, IsString, Min, MinLength } from "class-validator";
 
 export class CreateImageDto {
 
-    @IsString()
-    @MinLength(1)
-    name: string
+    // @IsString()
+    // @MinLength(1)
+    name?: string
 
-    @IsString()
-    @MinLength(1)
-    imageReference: string
+    // @IsString()
+    // @MinLength(1)
+    imageReference?: string
 
+    @Transform(({ value }) => parseInt(value, 10))
     @IsInt()
-    @IsPositive()
     @Min(1)
-    order: number
+    order: number;
 
     // @IsString()
     @IsMongoId()
     // @IsObject()
     qr: string
+
+
 }
