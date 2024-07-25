@@ -176,18 +176,94 @@ export class ImagesService {
     return image
   }
 
-  // ---------- Método para actualizar una imagen existente
+  // // ---------- Método para actualizar una imagen existente
+  // async update(id: string, updateImageDto: UpdateImageDto, file?: Express.Multer.File): Promise<ImageResponseDTO> {
+  //   // Validar el DTO de entrada
+  //   await validateOrReject(updateImageDto);
+
+  //   try {
+  //     // Buscar la imagen existente
+  //     const image = await this.imageModel.findById(id);
+  //     if (!image) {
+  //       throw new NotFoundException(`Imagen con id ${id} no encontrada`);
+  //     }
+
+  //     // Convertir el campo order a número si es una cadena
+  //     if (updateImageDto.order) {
+  //       updateImageDto.order = typeof updateImageDto.order === 'string' ? parseInt(updateImageDto.order, 10) : updateImageDto.order;
+  //     }
+
+  //     // Si se proporciona un nuevo archivo
+  //     if (file) {
+  //       // Directorio para almacenar el archivo
+  //       const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+  //       if (!fs.existsSync(uploadDir)) {
+  //         fs.mkdirSync(uploadDir, { recursive: true });
+  //       }
+
+  //       // Eliminar el archivo antiguo del directorio
+  //       const oldFilePath = path.join(__dirname, '..', '..', image.imageReference);
+  //       if (fs.existsSync(oldFilePath)) {
+  //         fs.unlinkSync(oldFilePath);
+  //       }
+
+  //       // Guardar el nuevo archivo en disco
+  //       const filename = `${image._id}-${file.originalname}`;
+  //       const newFilePath = path.join(uploadDir, filename);
+  //       fs.writeFileSync(newFilePath, file.buffer);
+
+  //       // Actualizar la referencia de la imagen y el nombre
+  //       image.imageReference = path.relative(path.join(__dirname, '..', '..'), newFilePath);
+  //       image.name = file.originalname;
+
+  //       // Subir el archivo a S3
+  //       const s3Result = await this.S3Service.uploadFile(file);
+  //       if (s3Result.success) {
+  //         image.s3Reference = s3Result.Location;
+  //       }
+  //     }
+
+  //     // Actualizar la imagen con los datos proporcionados
+  //     if (updateImageDto.qr) {
+  //       const qr = await this.qrModel.findById(updateImageDto.qr);
+  //       image.qr = qr;
+  //     }
+
+  //     Object.assign(image, updateImageDto);
+
+  //     // Guardar la imagen actualizada
+  //     const savedImage = await image.save();
+
+  //     // Poblar el QR relacionado
+  //     const populatedImage = await this.imageModel.findById(savedImage._id).populate('qr');
+
+  //     // Devolver la respuesta DTO de la imagen actualizada
+  //     return ImageResponseDTO.from(populatedImage);
+
+  //   } catch (error) {
+  //     console.error('Error:', error);  // Registrar el error
+  //     throw new InternalServerErrorException('Error al actualizar la imagen');
+  //   }
+  // }
+
+  /**
+   * Actualiza una imagen existente con nuevos datos y un archivo opcional.
+   * @param id ID de la imagen a actualizar.
+   * @param updateImageDto DTO con los nuevos datos para la imagen.
+   * @param file Archivo opcional para actualizar.
+   * @returns DTO de la imagen actualizada.
+   */
   async update(id: string, updateImageDto: UpdateImageDto, file?: Express.Multer.File): Promise<ImageResponseDTO> {
     // Validar el DTO de entrada
     await validateOrReject(updateImageDto);
 
-    try {
-      // Buscar la imagen existente
-      const image = await this.imageModel.findById(id);
-      if (!image) {
-        throw new NotFoundException(`Imagen con id ${id} no encontrada`);
-      }
+    // Buscar la imagen existente
+    const image = await this.imageModel.findById(id);
+    if (!image) {
+      throw new NotFoundException(`Imagen con id ${id} no encontrada`);
+    }
 
+    try {
       // Convertir el campo order a número si es una cadena
       if (updateImageDto.order) {
         updateImageDto.order = typeof updateImageDto.order === 'string' ? parseInt(updateImageDto.order, 10) : updateImageDto.order;
@@ -201,7 +277,7 @@ export class ImagesService {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        // Eliminar el archivo antiguo del directorio
+        // Eliminar el archivo antiguo del directorio si existe
         const oldFilePath = path.join(__dirname, '..', '..', image.imageReference);
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
@@ -216,19 +292,23 @@ export class ImagesService {
         image.imageReference = path.relative(path.join(__dirname, '..', '..'), newFilePath);
         image.name = file.originalname;
 
-        // Subir el archivo a S3
+        // Subir el archivo a S3 y manejar errores
         const s3Result = await this.S3Service.uploadFile(file);
-        if (s3Result.success) {
-          image.s3Reference = s3Result.Location;
+        if (!s3Result.success) {
+          throw new InternalServerErrorException('Error al subir el archivo a S3');
         }
+        image.s3Reference = s3Result.Location;
       }
 
       // Actualizar la imagen con los datos proporcionados
       if (updateImageDto.qr) {
         const qr = await this.qrModel.findById(updateImageDto.qr);
-        image.qr = qr;
+        if (qr) {
+          image.qr = qr;
+        }
       }
 
+      // Actualizar otros campos de la imagen
       Object.assign(image, updateImageDto);
 
       // Guardar la imagen actualizada
@@ -241,7 +321,7 @@ export class ImagesService {
       return ImageResponseDTO.from(populatedImage);
 
     } catch (error) {
-      console.error('Error:', error);  // Registrar el error
+      console.error('Error al actualizar la imagen:', error);
       throw new InternalServerErrorException('Error al actualizar la imagen');
     }
   }
