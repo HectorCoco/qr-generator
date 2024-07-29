@@ -4,6 +4,7 @@
 /build
 /mongo
 /uploads/
+/qr-images/
 
 # Logs
 logs

@@ -13,17 +13,25 @@ export class Qr extends Document {
     @Prop({
         type: String,
         unique: true,
-        index: true
+        required: true
     })
     @IsString()
     name: string
 
     @Prop({
-        required: true,
+        required: false,
         type: String,
     })
     @IsString()
     qrUrl: string
+
+
+    @Prop({
+        required: false,
+        type: String,
+    })
+    @IsString()
+    qrImageReference?: string;
 
     @Prop({
         type: Boolean,

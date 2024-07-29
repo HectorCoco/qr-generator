@@ -10,18 +10,22 @@ export type LinkDocument = Link & Document<Types.ObjectId>
 export class Link extends Document {
 
     @Prop({
-        unique: false,
-    })
-    @IsString()
-    name: string
-
-    @Prop({
+        type: String,
         unique: true,
+        required: false,
     })
     @IsString()
-    linkReference: string
+    name?: string
 
     @Prop({
+        unique: false,
+        required: true
+    })
+    @IsString()
+    url: string
+
+    @Prop({
+        default: true,
         type: Boolean
     })
     @IsBoolean()

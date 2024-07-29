@@ -26,12 +26,12 @@ export class ImagesService {
   ) { }
 
 
-  // /**
-  // * Crea una nueva imagen y la guarda en disco y en S3.
-  // * @param createImageDto DTO con los datos de la imagen.
-  // * @param file Archivo de la imagen a subir.
-  // * @returns El DTO de la imagen guardada.
-  // */
+  /**
+  * Crea una nueva imagen y la guarda en disco y en S3.
+  * @param createImageDto DTO con los datos de la imagen.
+  * @param file Archivo de la imagen a subir.
+  * @returns El DTO de la imagen guardada.
+  */
   async create(createImageDto: CreateImageDto, file: Express.Multer.File): Promise<ImageResponseDTO> {
     // Validar el DTO de entrada
     await validateOrReject(createImageDto);

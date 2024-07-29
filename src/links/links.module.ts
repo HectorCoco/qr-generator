@@ -21,7 +21,8 @@ import { Qr, QrSchema } from 'src/qrs/entities/qr.entity';
     ])
   ],
   exports: [
-    MongooseModule
+    MongooseModule,
+    LinksService,
   ],
 })
 export class LinksModule { }

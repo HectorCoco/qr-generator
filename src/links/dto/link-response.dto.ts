@@ -7,7 +7,7 @@ export default class LinkResponseDTO {
     constructor(
         public _id: string,
         public name: string,
-        public linkReference: string,
+        public url: string,
         public active: boolean,
         public createdAt: string,
         public modifiedAt: string,
@@ -18,7 +18,7 @@ export default class LinkResponseDTO {
         return new LinkResponseDTO(
             link._id.toString(),
             link.name,
-            link.linkReference,
+            link.url,
             link.active,
             link.createdAt,
             link.modifiedAt,

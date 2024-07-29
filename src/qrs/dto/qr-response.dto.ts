@@ -12,6 +12,7 @@ export default class QrResponseDTO {
         public modifiedAt: string,
         public location: LocationDocument,
         public category: CategoryDocument,
+        public qrImageReference: string,
         public qrData: any,
     ) { }
 
@@ -26,6 +27,7 @@ export default class QrResponseDTO {
             qr.modifiedAt,
             qr.location,
             qr.category,
+            qr.qrImageReference,
             qr.qrData
         );
     }

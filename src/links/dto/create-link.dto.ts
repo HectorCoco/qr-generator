@@ -9,7 +9,7 @@ export class CreateLinkDto {
 
     @IsString()
     @MinLength(1)
-    linkReference: string
+    url: string
 
     @IsMongoId()
     qr: string

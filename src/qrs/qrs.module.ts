@@ -10,6 +10,7 @@ import { File, FileSchema } from 'src/files/entities/file.entity';
 import { Link, LinkSchema } from 'src/links/entities/link.entity';
 import { S3Module } from 'src/s3/s3.module';
 import { ImagesModule } from 'src/images/images.module';
+import { LinksModule } from 'src/links/links.module';
 
 @Module({
   controllers: [QrsController],
@@ -25,6 +26,7 @@ import { ImagesModule } from 'src/images/images.module';
     ]),
     S3Module,
     ImagesModule,
+    LinksModule,
   ],
   exports: [QrsService],
 })
