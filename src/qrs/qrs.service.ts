@@ -21,6 +21,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LinksService } from 'src/links/links.service';
 import { CreateLinkDto } from 'src/links/dto/create-link.dto';
+import { ensureDirectoryExistence } from 'src/common/helpers/ensure-directory';
 
 @Injectable()
 export class QrsService {
@@ -35,7 +36,6 @@ export class QrsService {
     private readonly linkService: LinksService,
     private readonly s3Service: S3Service,
   ) { }
-
 
   /** Método para crear un QR
    * The `create` function in TypeScript asynchronously creates a QR code along with associated data and
@@ -66,7 +66,7 @@ export class QrsService {
 
     try {
       // Asegurarse de que el directorio para las imágenes exista; si no, lo crea
-      this.ensureDirectoryExistence(imagesDir);
+      ensureDirectoryExistence(imagesDir);
 
       // Verificar si ya existe un QR con el mismo nombre
       const existingQr = await this.qrModel.findOne({ name: createQrDto.name.toLowerCase() }).exec();
@@ -81,7 +81,7 @@ export class QrsService {
 
       // Si no se proporciona un URL, se genera automáticamente
       if (!createQrDto.qrUrl) {
-        newQr.qrUrl = `https://www.${generateSlug(12)}`;
+        newQr.qrUrl = generateSlug(12);
       }
 
       // Buscar y asignar la ubicación asociada al QR desde la base de datos
@@ -114,7 +114,7 @@ export class QrsService {
         try {
           const createLinkDto: CreateLinkDto = {
             name: createdQr.name,
-            url: `https://www.${createdQr.qrUrl}`,
+            url: createdQr.qrUrl,
             qr: createdQr._id.toString(),
           };
 
@@ -198,58 +198,101 @@ export class QrsService {
       }).exec();
   }
 
-  // Método para encontrar un QR por ID o nombre
+  /** Método para encontrar un QR por ID o nombre
+   * The function `findOne` searches for a QR document by either ID or name, populates related fields,
+   * retrieves additional data based on category type, and returns the QR document with additional
+   * data.
+   * @param {string} term - The `findOne` function you provided is an asynchronous function that
+   * searches for a document in a MongoDB collection based on the term provided. If the term is a valid
+   * MongoDB ID, it searches for the document by ID; otherwise, it searches for the document by name.
+   * @returns The `findOne` function returns a Promise that resolves to a `QrDocument` object. This
+   * object represents a QR code document with additional data related to its location, category, and
+   * specific QR data. The function first checks if the provided term is a valid MongoDB ID, then
+   * searches for the QR document either by ID or by name. If the document is found, it populates the
+   * location and
+   */
   async findOne(term: string): Promise<QrDocument> {
+    // Verificar si el término proporcionado es un ID válido de MongoDB
     const isMongoId = Types.ObjectId.isValid(term);
+    // Inicializar la variable qr para almacenar el documento encontrado
     let qr: QrDocument | null;
 
     try {
       if (isMongoId) {
-        // Buscar por ID de MongoDB
+        // Si el término es un ID de MongoDB, buscar el documento por ID
         qr = await this.qrModel.findById(term)
+          // Poblar el campo 'location' con los datos de la ubicación asociada
           .populate({
             path: 'location',
-            select: '_id locationNumber name' // Seleccionar solo los campos necesarios
+            // Seleccionar solo los campos necesarios de la ubicación
+            select: '_id locationNumber name'
           })
+          // Poblar el campo 'category' con los datos de la categoría asociada
           .populate({
             path: 'category',
-            select: '_id categoryType name' // Seleccionar solo los campos necesarios
+            // Seleccionar solo los campos necesarios de la categoría
+            select: '_id categoryType name'
           })
+          // Ejecutar la consulta
           .exec();
       } else {
-        // Buscar por nombre
-        qr = await this.qrModel.findOne({ name: term })
+        // Si el término no es un ID de MongoDB, buscar el documento por nombre
+        qr = await this.qrModel.findOne({ qrUrl: term })
+          // Poblar el campo 'location' con los datos de la ubicación asociada
           .populate({
             path: 'location',
-            select: '_id locationNumber name' // Seleccionar solo los campos necesarios
+            // Seleccionar solo los campos necesarios de la ubicación
+            select: '_id locationNumber name'
           })
+          // Poblar el campo 'category' con los datos de la categoría asociada
           .populate({
             path: 'category',
-            select: '_id categoryType name' // Seleccionar solo los campos necesarios
+            // Seleccionar solo los campos necesarios de la categoría
+            select: '_id categoryType name'
           })
+          // Ejecutar la consulta
           .exec();
       }
 
+      // Si no se encuentra el documento, lanzar una excepción de "No encontrado"
       if (!qr) {
         throw new NotFoundException(`Registro con el parámetro ${term} no ha sido encontrado`);
       }
 
-      // Obtener datos según el tipo de categoría
+      // Obtener los datos adicionales según el tipo de categoría del QR encontrado
       const qrData = await this.getDataType(qr._id, qr.category.categoryType);
 
-      // Agregar datos relacionados al documento
+      // Agregar los datos relacionados obtenidos al documento del QR
       (qr as any).qrData = qrData;
 
-      // Devolver QR encontrado con datos adicionales
+      // Devolver el documento del QR encontrado junto con los datos adicionales
       return qr;
 
     } catch (error) {
+      // Si ocurre un error, mostrarlo en la consola para depuración
       console.error('Error en findOne:', error);
+      // Lanzar una excepción interna del servidor indicando que hubo un error al buscar el QR
       throw new InternalServerErrorException('Error al buscar el registro QR');
     }
   }
 
-  // Método para actualizar un QR
+  /** Método para actualizar un QR
+  * The function `update` in TypeScript updates a QR record with the provided data, including handling
+  * image file uploads and updating related fields like location and category.
+  * @param {string} term - The `term` parameter in the `update` function represents the search term
+  * used to find the existing QR code that needs to be updated. It could be an identifier, name, or any
+  * unique attribute that helps locate the specific QR code in the database.
+  * @param {UpdateQrDto} updateQrDto - The `updateQrDto` parameter in the `update` method is an object
+  * that contains the data to update a QR code. It likely includes properties such as `name`,
+  * `location`, `category`, and `modifiedAt` among others. This object is used to update the existing
+  * QR code
+  * @param {Express.Multer.File[]} files - The `files` parameter in the `update` function represents an
+  * array of files that are uploaded along with the update request. In this function, the code is
+  * checking if there are any files uploaded and then processing each file individually within the
+  * `files.forEach` loop.
+  * @returns The `update` function returns a Promise that resolves to a `QrResponseDTO` object
+  * representing the updated QR after processing the update request and saving changes to the database.
+  */
   async update(term: string, updateQrDto: UpdateQrDto, files: Express.Multer.File[]): Promise<QrResponseDTO> {
 
     const qr = await this.findOne(term); // Buscar QR existente
@@ -324,11 +367,16 @@ export class QrsService {
     }
   }
 
-  /**
- * Método para eliminar un QR y su imagen asociada.
- * @param id - ID del QR a eliminar.
- * @returns Mensaje de éxito.
- */
+  /** Método para eliminar un QR y su imagen asociada.
+  * The function `remove` asynchronously removes a QR code and its associated image from the database,
+  * handling different scenarios such as checking the category type, deleting associated links, and
+  * managing errors.
+  * @param {string} id - The `remove` method you provided is an asynchronous function that removes a QR
+  * code and its associated image from the database. It performs the following steps:
+  * @returns The `remove` function returns a Promise that resolves to an object with a `msg` property
+  * containing the message "QR eliminado exitosamente" (QR deleted successfully) if the QR and its
+  * associated image were successfully removed.
+  */
   async remove(id: string): Promise<{ msg: string }> {
     // Buscar el QR en la base de datos para obtener la referencia de la imagen
     const qr = await this.qrModel.findById(id).exec();
@@ -396,7 +444,19 @@ export class QrsService {
     }
   }
 
-  // Método para buscar QRs por término
+  /** Método para buscar QRs por término
+   * The function searches for QrDocuments based on a given term and returns a maximum of 20 results
+   * with specific fields populated.
+   * @param {string} term - The `search` function you provided is an asynchronous function that
+   * searches for `QrDocument` objects based on a given `term`. The function uses the `qrModel` to find
+   * documents where the `name` field matches the provided term using a case-insensitive regex search.
+   * It then populates
+   * @returns The `search` function is returning a Promise that resolves to an array of `QrDocument`
+   * objects based on the search term provided. The function performs a search in the `qrModel`
+   * collection using a case-insensitive regex match on the `name` field with the provided term. It
+   * then populates the `location` and `category` fields with specific selected fields, limits the
+   * results to
+   */
   async search(term: string): Promise<QrDocument[]> {
     const qrs = await this.qrModel
       .find({ name: { $regex: `.*${term}.*`, $options: 'i' } })
@@ -416,7 +476,24 @@ export class QrsService {
     return qrs;
   }
 
-  // Método para buscar QRs con filtros de ubicación y categoría
+  /** Método para buscar QRs con filtros de ubicación y categoría
+ * The function `findQrsWithFilters` retrieves QR codes with optional filters for location and
+ * category, populates location and category references, processes additional data based on category
+ * type, and returns a Promise of QrResponseDTO array.
+ * @param {string} [location] - The `location` parameter in the `findQrsWithFilters` method is used to
+ * filter the QR codes based on their location. If a location is provided, the method will search for
+ * locations that match the provided name (case-insensitive) in the `locationModel` collection. If any
+ * matching
+ * @param {string} [category] - The `category` parameter in the `findQrsWithFilters` method is used to
+ * filter the QR codes based on a specific category. If a category is provided, the method will query
+ * the database to find categories that match the provided input and then filter the QR codes based on
+ * those categories. If
+ * @returns The `findQrsWithFilters` method returns a Promise that resolves to an array of
+ * `QrResponseDTO` objects. These objects are obtained by querying the database for QR codes based on
+ * optional filters for location and category. The method first constructs a query based on the
+ * provided filters, then executes the query and populates references to location and category fields.
+ * Finally, it processes the results to include
+ */
   async findQrsWithFilters(location?: string, category?: string): Promise<QrResponseDTO[]> {
     try {
       let query = this.qrModel.find();
@@ -476,7 +553,21 @@ export class QrsService {
     }
   }
 
-  // Método para obtener datos según el tipo de categoría
+  /** Método para obtener datos según el tipo de categoría
+ * The function `getDataType` retrieves data based on the provided `id` and `categoryType`, returning
+ * different types of data (images, documents, or links) accordingly.
+ * @param id - The `id` parameter is of type `Types.ObjectId`, which is likely an identifier for a
+ * specific document or entity in a MongoDB database.
+ * @param {string} categoryType - The `categoryType` parameter is a string that specifies the type of
+ * data to retrieve. It can have three possible values: 'images', 'documents', or any other value.
+ * Depending on the value of `categoryType`, the function retrieves data from different models
+ * (`imageModel`, `fileModel`,
+ * @returns The `getDataType` function returns different data based on the `categoryType` parameter
+ * provided:
+ * - If `categoryType` is 'images', it returns an array of objects with properties `value` and `order`
+ * extracted from the images found in the imageModel collection.
+ * - If `categoryType` is 'documents', it returns an array of objects with properties `doc` and `value`
+ */
   async getDataType(id: Types.ObjectId, categoryType: string): Promise<any> {
     if (categoryType === 'images') {
       const images = await this.imageModel.find({ qr: id }).sort({ order: 1 }).exec();
@@ -490,16 +581,25 @@ export class QrsService {
     }
   }
 
-  /**
- * Crea una imagen QR y la guarda en el directorio especificado.
- * @param name Nombre del archivo de la imagen QR.
- * @param filePath Ruta completa para guardar la imagen QR.
- * @param content Contenido del código QR.
- */
+  /** Método para crear la imagen del QR
+    * The function `createQrImage` generates a QR code image based on the provided content and saves it
+    * to a specified file path, handling errors and file operations along the way.
+    * @param {string} name - The `name` parameter in the `createQrImage` function is not being used in
+    * the function implementation. It seems like it was intended to be used for something specific, but
+    * currently, it is not being utilized within the function. If you intended to use it for a specific
+    * purpose, you
+    * @param {string} filePath - The `filePath` parameter in the `createQrImage` function is the path
+    * where the QR code image will be saved. It should be a string that represents the file path
+    * including the file name and extension where the QR code image will be stored. For example, it could
+    * be something like `"
+    * @param {string} content - The `content` parameter in the `createQrImage` function is used to
+    * generate the data that will be encoded in the QR code. In the provided code snippet, the `content`
+    * is prefixed with `https://www.` to create a valid URL for the QR code data.
+    */
   private async createQrImage(name: string, filePath: string, content: string): Promise<void> {
     try {
       // Generar el contenido del QR
-      const qrData = `https://www.${content}`;
+      const qrData = `http://localhost:3000/api/v2/qrs/${content}`;
 
       // Generar el contenido del QR
       // const qrData = `https://www.google.com.mx`;
@@ -529,14 +629,6 @@ export class QrsService {
         fs.unlinkSync(filePath);
       }
       throw new Error('No se pudo generar la imagen del QR');
-    }
-  }
-
-  // Método para asegurarse de que el directorio existe
-  private ensureDirectoryExistence(dirPath: string): void {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`Directorio creado: ${dirPath}`);
     }
   }
 

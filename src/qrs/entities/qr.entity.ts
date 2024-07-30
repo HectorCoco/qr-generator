@@ -23,7 +23,7 @@ export class Qr extends Document {
         type: String,
     })
     @IsString()
-    qrUrl: string
+    qrUrl?: string
 
 
     @Prop({
