@@ -4,7 +4,7 @@ import { CreateQrDto } from './dto/create-qr.dto';
 import { UpdateQrDto } from './dto/update-qr.dto';
 import QrResponseDTO from './dto/qr-response.dto';
 import { QrDocument } from './entities/qr.entity';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('qrs')
 export class QrsController {
@@ -15,7 +15,7 @@ export class QrsController {
   @UseInterceptors(FilesInterceptor('files'))
   async create(
     @Body() createQrDto: CreateQrDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files?: Express.Multer.File[],
   ): Promise<QrResponseDTO> {
     // Llamar al servicio para crear el QR y manejar los archivos
     return this.qrsService.create(createQrDto, files);

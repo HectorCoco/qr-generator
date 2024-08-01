@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { LinkDocument } from './entities/link.entity';
@@ -15,6 +15,9 @@ export class LinksService {
     @InjectModel('Link') private readonly linkModel: Model<LinkDocument>, // Inyectar el modelo de Link
     @InjectModel('Qr') private readonly qrModel: Model<QrDocument>, // Inyectar el modelo de Qr
   ) { }
+
+
+
 
   /**
    * Método para crear un nuevo enlace.
@@ -38,6 +41,29 @@ export class LinksService {
       console.log(error);
       handleExceptions(error); // Manejar excepciones
     }
+  }
+
+  /** 
+   * The `createLink` function in TypeScript creates a link using data from a QrDocument object.
+   * @param {QrDocument} qr - The `qr` parameter in the `createLink` function is of type `QrDocument`,
+   * which seems to have properties `name`, `qrUrl`, and `_id`. The function extracts these properties
+   * from the `qr` object and creates a `createLinkDto` object with properties `name
+   */
+  async createLink(qr: QrDocument) {
+    const { name, qrUrl, _id } = qr;
+    try {
+      const createLinkDto: CreateLinkDto = {
+        name: name,
+        url: qrUrl,
+        qr: _id.toString(),
+      }
+
+      await this.create(createLinkDto)
+
+    } catch (error) {
+      throw new InternalServerErrorException('Error al crear el registro de link', error);
+    }
+
   }
 
   /**

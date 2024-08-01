@@ -17,31 +17,32 @@ export class S3Service {
         })
     }
 
-    // Método para almacenar un archivo en S3
+    /** Método para almacenar un archivo en S3 */
     async uploadFile(file: Express.Multer.File): Promise<any> {
-
-        const bucketName = "tickets-bucket-service"
+        const bucketName = "tickets-bucket-service";
         const uploadResult = {
             fileName: file.originalname,
             success: false
-        }
+        };
 
         const params = {
             Bucket: bucketName,
             Key: file.originalname,
             Body: file.buffer,
-        }
+        };
+
         try {
-            const command = new PutObjectCommand(params)
-            const response = await this.s3Client.send(command)
-            uploadResult["success"] = response.$metadata.httpStatusCode == 200
-            console.log('File uploaded successfully', uploadResult, response)
+            // Crear y enviar el comando para subir el archivo a S3
+            const command = new PutObjectCommand(params);
+            const response = await this.s3Client.send(command);
+            uploadResult.success = response.$metadata.httpStatusCode == 200;
+            console.log('File uploaded successfully', uploadResult, response);
 
         } catch (error) {
-            console.error('Error uploading file', error)
-
+            console.error('Error uploading file', error);
         }
-        return uploadResult
+
+        return uploadResult;
     }
 
     // Método para eliminar un archivo de S3

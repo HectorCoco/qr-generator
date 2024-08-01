@@ -11,6 +11,7 @@ import { Link, LinkSchema } from 'src/links/entities/link.entity';
 import { S3Module } from 'src/s3/s3.module';
 import { ImagesModule } from 'src/images/images.module';
 import { LinksModule } from 'src/links/links.module';
+import { FilesModule } from 'src/files/files.module';
 
 @Module({
   controllers: [QrsController],
@@ -20,13 +21,14 @@ import { LinksModule } from 'src/links/links.module';
       { name: Qr.name, schema: QrSchema },
       { name: Location.name, schema: LocationSchema },
       { name: Category.name, schema: CategorySchema },
+      { name: Link.name, schema: LinkSchema },
       { name: Image.name, schema: ImageSchema },
       { name: File.name, schema: FileSchema },
-      { name: Link.name, schema: LinkSchema },
     ]),
     S3Module,
-    ImagesModule,
     LinksModule,
+    ImagesModule,
+    FilesModule,
   ],
   exports: [QrsService],
 })

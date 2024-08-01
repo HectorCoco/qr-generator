@@ -15,3 +15,7 @@ export function s3Credentials() {
 
     return s3Credentials
 }
+
+export function s3Url() {
+    return process.env.S3_URL
+}

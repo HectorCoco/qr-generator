@@ -25,7 +25,7 @@ export class ImagesService {
 
   ) { }
 
-  /** Metodo para crear una nueva imagen
+  /**   Metodo para crear una nueva imagen
   * The function creates a new image record, associates it with a QR code, saves the image file to
   * disk, and handles errors appropriately.
   * @param {CreateImageDto} createImageDto - `createImageDto` is an object that contains the data
@@ -42,6 +42,10 @@ export class ImagesService {
     // Validar el DTO de entrada
     await validateOrReject(createImageDto);
 
+    if (!file) {
+      throw new InternalServerErrorException('Error al cargar el archivo de imagen');
+
+    }
     // Convertir el campo order a número si es una cadena
     createImageDto.order = typeof createImageDto.order === 'string' ? parseInt(createImageDto.order, 10) : createImageDto.order;
 
@@ -52,21 +56,9 @@ export class ImagesService {
     const qr = await this.qrModel.findById(createImageDto.qr);
     newImage.qr = qr;
 
-    // Directorio de subida
-    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-    let filePath: string | null = null;
-
     try {
       // Intentar guardar el registro de imagen en la base de datos
       const savedImage = await newImage.save();
-
-      // Generar nombre de archivo único y verificar si ya existe
-      const filename = `${savedImage._id}-${file.originalname}`;
-      filePath = path.join(uploadDir, filename);
-
-      if (fs.existsSync(filePath)) {
-        throw new BadRequestException(`Archivo con el nombre ${file.originalname} ya existe`);
-      }
 
       // Subir el archivo a S3
       const s3Result = await this.S3Service.uploadFile(file);
@@ -74,13 +66,9 @@ export class ImagesService {
         throw new InternalServerErrorException('Error al subir el archivo a S3');
       }
 
-      // Guardar el archivo en disco
-      fs.writeFileSync(filePath, file.buffer);
-
       // Establecer la referencia de la imagen a la ruta del archivo
-      savedImage.imageReference = path.relative(path.join(__dirname, '..', '..'), filePath);
       savedImage.name = file.originalname;
-      // savedImage.s3Reference = s3Result.fileName; // Asumiendo que 'fileName' es la referencia de S3
+      savedImage.s3Reference = s3Result.fileName; // Asumiendo que 'fileName' es la referencia de S3
 
       // Guardar la imagen con las referencias actualizadas en la base de datos
       await savedImage.save();
@@ -91,11 +79,6 @@ export class ImagesService {
     } catch (error) {
       console.error('Error:', error);  // Registrar el error
 
-      // Eliminar el archivo del directorio si fue creado
-      if (filePath && fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-
       // Eliminar el registro de imagen de la base de datos si algo falla
       if (newImage._id) {
         await this.imageModel.findByIdAndDelete(newImage._id);
@@ -105,7 +88,48 @@ export class ImagesService {
     }
   }
 
-  //------------------------------------------------------
+/**
+ * The function `createImages` asynchronously creates image records associated with a QR code document
+ * using the provided files.
+ * @param {QrDocument} qr - The `qr` parameter in the `createImages` function is of type `QrDocument`.
+ * It seems to contain an `_id` property that is being extracted using destructuring in the function.
+ * @param files - The `files` parameter in the `createImages` function is an array containing the image
+ * files that need to be processed and saved. Each element in the array represents an image file and
+ * may contain information such as the original name of the file and the file itself. The function
+ * iterates over each file
+ */
+  async createImages(qr: QrDocument, files: Array<any>) {
+    const { _id } = qr;
+    if (files.length <= 0) {
+      throw new InternalServerErrorException('Error al cargar los archivos de imagen');
+    }
+
+    try {
+      let orderCount = 1;
+      for (const file of files) {
+        const createImageDto: CreateImageDto = {
+          name: file.originalname,
+          imageReference: '',
+          order: orderCount,
+          qr: _id.toString(),
+        }
+        orderCount += 1;
+
+        await this.create(createImageDto, file);
+      }
+    } catch (error) {
+      throw new InternalServerErrorException('Error Crear los registros de imagen');
+
+    }
+  }
+
+/**
+ * The function `findImagesWithFilters` in TypeScript asynchronously retrieves images with optional
+ * filters based on a query string.
+ * @param {string} [qr] - The `findImagesWithFilters` function is an asynchronous function that
+ * retrieves images based on optional query parameters.
+ * @returns An array of ImageResponseDTO objects is being returned.
+ */
   async findImagesWithFilters(
     qr?: string,
   ): Promise<Array<ImageResponseDTO>> {
