@@ -17,10 +17,10 @@ npm install
 npm i -g @nestjs/cli
 ```
 
-4. Levantar la base de datos
+4. Levantar el proyecto
 
 ```shell
-docker-compose up -d
+docker-compose down && docker-compose up --build
 ```
 
 5. Reconstruir la base de datos con la semilla
