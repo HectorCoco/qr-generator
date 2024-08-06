@@ -21,7 +21,7 @@ import { FileUploadModule } from './file-upload/file-upload.module';
     }),
 
 
-    MongooseModule.forRoot('mongodb://localhost:27017/qrs-generator?compressors=snappy,zlib'),
+    MongooseModule.forRoot('mongodb://db:27017/qrs-generator?compressors=snappy,zlib'),
 
 
     LocationsModule,

@@ -10,3 +10,32 @@ services:
       MONGODB_DATABASE: nest-qrs
     volumes:
       - ./mongo:/data/db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 3000:3000
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://db:27017/nest-qrs
+    depends_on:
+      - db
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+
+# Volumes can be declared to persist data and avoid it from being removed when the containers are down
+volumes:
+  mongo:
