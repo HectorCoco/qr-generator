@@ -13,16 +13,16 @@ import { FileDocument } from 'src/files/entities/file.entity';
 import { LinkDocument } from 'src/links/entities/link.entity';
 import { S3Service } from "src/s3/s3.service";
 import { ImagesService } from 'src/images/images.service';
-import { CreateImageDto } from 'src/images/dto/create-image.dto';
 import { generateSlug } from 'src/common/helpers/strings.helpers';
 import { validateOrReject } from 'class-validator';
 import * as QRCode from 'qrcode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LinksService } from 'src/links/links.service';
-import { CreateLinkDto } from 'src/links/dto/create-link.dto';
 import { Readable } from 'stream';
 import { s3Url } from '../s3-credentials';
+import { CreateDocumentDto } from '../files/dto/create-document.dto';
+import { FilesService } from 'src/files/files.service';
 
 @Injectable()
 export class QrsService {
@@ -35,7 +35,7 @@ export class QrsService {
     @InjectModel('Link') private readonly linkModel: Model<LinkDocument>,
     private readonly linkService: LinksService,
     private readonly imagesService: ImagesService,
-    private readonly FilesService: LinksService,
+    private readonly FilesService: FilesService,
     private readonly s3Service: S3Service,
   ) { }
 
@@ -44,122 +44,79 @@ export class QrsService {
     // Validar el DTO usando la función validateOrReject
     await validateOrReject(createQrDto);
 
-    // Variable para almacenar el QR creado, inicialmente nulo
-    let createdQr: QrDocument | null = null;
 
     // Crear una nueva instancia del modelo QR con los datos proporcionados
     const newQr = new this.qrModel(createQrDto);
+
+    // Se asigna el el atributo name de qr
     newQr.name = createQrDto.name.toLowerCase();
 
-    // Si no se proporciona un URL, se genera automáticamente
+    const s3_Url = s3Url()
+
+    // Si no se proporciona un URL, se genera y asigna automáticamente
     if (!createQrDto.qrUrl) {
       const slug = generateSlug(12);
       newQr.qrUrl = `https://qr.cocobongo.com/${slug}`
     }
 
-
     try {
       // Verificar si ya existe un QR con el mismo nombre
-      const existingQr = await this.qrModel.findOne({ name: createQrDto.name.toLowerCase() }).exec();
+      const existingQr = await this.qrModel.findOne({ name: newQr.name }).exec();
       if (existingQr) {
         // Si el QR ya existe, retornar un error o manejar el caso según sea necesario
         throw new ConflictException('Ya existe un QR con el mismo nombre');
       }
 
-      // Usar la función externa para buscar y asignar la ubicación y la categoría
+      // Usar la función para buscar y asignar la ubicación y la categoría
       await this.findAndAssignLocationAndCategory(newQr, createQrDto.location, createQrDto.category);
 
-      // Guardar la instancia del QR en la base de datos
-      createdQr = await newQr.save();
-
-      // Crear la imagen del QR solo si la creación del QR fue exitosa
       try {
-        await this.createQrImage(createQrDto.name, newQr.qrUrl);
+        // Crear la imagen del QR
+        await this.createQrImage(newQr.name, newQr.qrUrl);
 
-        // Guardar el QR con la referencia a la imagen
-        await createdQr.save();
+        newQr.qrImageReference = `${s3_Url}/${newQr.name}.png`
+
+        // Si la imagen se crea, se guarda el registro de qr en DB
+        await newQr.save();
 
       } catch (error) {
-        // Si ocurre un error al crear la imagen del QR, eliminar el QR creado
-        await this.qrModel.deleteOne({ _id: createdQr._id }).exec();
+
         throw new InternalServerErrorException('Error al generar la imagen del QR');
       }
 
       try {
-        switch (newQr.category.categoryType) {
-          case "images":
-            try {
+        await this.handleCategoryFiles(newQr, newQr.category.categoryType, files)
 
-              await this.imagesService.createImages(createdQr, files);
-
-            } catch (error) {
-              throw new InternalServerErrorException('Error al crear las imágenes');
-            }
-            break;
-
-          case "documents":
-            // todo Modificar logica para que funcione con documents!!!
-            // try {
-            //   let orderCount = 1;
-            //   for (const file of files) {
-            //     const createImageDto: CreateImageDto = {
-            //       name: file.originalname,
-            //       imageReference: '',
-            //       order: orderCount,
-            //       qr: createdQr._id.toString(),
-            //     };
-            //     orderCount += 1;
-
-            //     await this.imagesService.create(createImageDto, file);
-            //   }
-            // } catch (error) {
-            //   throw new InternalServerErrorException('Error al crear las imágenes');
-            // }
-            break;
-
-          default:
-            try {
-              await this.linkService.createLink(createdQr);
-            } catch {
-              throw new InternalServerErrorException('Error al crear el link');
-            }
-            break;
-        }
       } catch (error) {
         // Si ocurre un error al procesar las imágenes, eliminar el QR creado
-        await this.qrModel.deleteOne({ _id: createdQr._id }).exec();
+        await newQr.deleteOne().exec();
+
         throw new InternalServerErrorException('Error al generar procesar los archivos QR');
 
       }
 
       // Obtener datos según el tipo de categoría
-      const qrData = await this.getDataType(createdQr._id, newQr.category.categoryType);
-
-      // Crear la respuesta DTO a partir del QR creado
-      const qrResponse = QrResponseDTO.from(createdQr);
-      qrResponse.qrData = qrData;
-
-      // Retornar la respuesta DTO con los datos del QR
-      return qrResponse;
+      newQr.qrData = await this.getDataType(newQr._id, newQr.category.categoryType);
+      return QrResponseDTO.from(newQr);
 
     } catch (error) {
-      // En caso de error en cualquier parte del proceso:
-
       // Eliminar el QR creado si existe
-      if (createdQr) {
-        await this.qrModel.deleteOne({ _id: createdQr._id }).exec();
+      if (newQr) {
+        await newQr.deleteOne().exec();
       }
-
       // Manejar excepciones y lanzar un error general
-      handleExceptions(error);
-      throw new InternalServerErrorException('Error al crear el QR y las imágenes');
+      throw new InternalServerErrorException(error, `Error al crear el QR y los registros de ${newQr.category.categoryType}`);
     }
   }
 
   /** Método para obtener todos los QRs */
   async findAll(): Promise<QrDocument[]> {
+    try {
+      return await this.qrModel.find().populate(this.getPopulateOptions()).exec();
 
-    return await this.qrModel.find().populate(this.getPopulateOptions()).exec();
+    } catch (error) {
+      throw new InternalServerErrorException(error, `Error al obtener datos de Qr`);
+    }
   }
 
   /** Método para encontrar un QR por ID o nombre */
@@ -396,7 +353,6 @@ export class QrsService {
         .populate(this.getPopulateOptions())
         .exec();
 
-
       // Procesar los resultados para obtener los datos adicionales según el tipo de categoría
       const qrPromises = qrs.map(async qr => {
         const qrDto = QrResponseDTO.from(qr);
@@ -415,16 +371,46 @@ export class QrsService {
   /** Método para obtener datos según el tipo de categoría  */
   async getDataType(id: Types.ObjectId, categoryType: string): Promise<any> {
     const s3_Url = s3Url()
-    if (categoryType === 'images') {
-      const images = await this.imageModel.find({ qr: id }).sort({ order: 1 }).exec();
-      return images.map(image => ({ img: `${s3_Url}/${image.name}`, order: image.order }));
-    } else if (categoryType === 'documents') {
-      const documents = await this.fileModel.find({ qr: id }).exec();
-      return documents.map(document => ({ doc: `${s3_Url}/${document.name}`, value: document.documentReference }));
-    } else {
-      const documents = await this.linkModel.find({ qr: id }).exec();
-      return documents.map(document => ({ link: document.url }));
+    try {
+      switch (categoryType) {
+        case 'images':
+          const images = await this.imageModel
+            .find({ qr: id })
+            .sort({ order: 1 })
+            .exec();
+
+          return images.map(image => ({
+            name: image.name,
+            url: image.s3Reference,
+            order: image.order,
+          }));
+          break;
+
+        case 'documents':
+          const documents = await this.fileModel
+            .find({ qr: id })
+            .exec();
+
+          return documents.map(document => ({
+            name: document.name,
+            url: `${s3_Url}/${document.name}`,
+
+          }));
+          break;
+
+        default:
+          const links = await this.linkModel.find({ qr: id }).exec();
+          return links.map(link => ({
+            name: link.name,
+            url: link.url,
+          }));
+          break;
+      }
+    } catch (error) {
+      console.error('Error al obtener los datos relacionados:', error);
+      throw new Error('Error al obtener los datos relacionados.');
     }
+
   }
 
   /** Método para crear la imagen del QR y guardarla en S3 */
@@ -486,6 +472,49 @@ export class QrsService {
     const category = await this.categoryModel.findById(categoryId).exec();
     // Asignar la categoría encontrada al QR
     qr.category = category;
+  }
+  /** Función para determinar la categoria y procesar los archivos segun el caso */
+  private async handleCategoryFiles(qr: QrDocument, category: string, files?: Array<any>): Promise<void> {
+    try {
+      switch (category) {
+        case "images":
+          try {
+
+            await this.imagesService.createImages(qr, files);
+
+          } catch (error) {
+            throw new InternalServerErrorException('Error al crear las imágenes');
+          }
+          break;
+
+        case "documents":
+          try {
+            const s3_Url = s3Url()
+            for (const file of files) {
+              const createDocumentDto: CreateDocumentDto = {
+                name: file.originalname,
+                s3Reference: `${s3_Url}/${file.originalname}`,
+                qr: qr._id.toString(),
+              };
+              await this.FilesService.create(createDocumentDto, file);
+            }
+          } catch (error) {
+            throw new InternalServerErrorException('Error al crear los documentos');
+          }
+          break;
+
+        default:
+          try {
+            await this.linkService.createLink(qr);
+          } catch {
+            throw new InternalServerErrorException('Error al crear el link');
+          }
+          break;
+      }
+    } catch (error) {
+      throw new InternalServerErrorException('Error al leer o asignar la categoria');
+    }
+
   }
 
   private getPopulateOptions() {

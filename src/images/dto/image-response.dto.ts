@@ -6,7 +6,7 @@ export default class ImageResponseDTO {
     constructor(
         public _id: string,
         public name: string,
-        public imageReference: string,
+        public s3Reference: string,
         public order: any,
         public active: boolean,
         public createdAt: string,
@@ -20,7 +20,7 @@ export default class ImageResponseDTO {
         return new ImageResponseDTO(
             image._id.toString(),
             image.name,
-            image.imageReference,
+            image.s3Reference,
             image.order,
             image.active,
             image.createdAt,

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Credentials } from 'src/s3-credentials';
+import { replaceSpacesWithUnderscores } from 'src/common/helpers/replaceSpacesWithUnder';
 
 @Injectable()
 export class S3Service {
@@ -36,7 +37,7 @@ export class S3Service {
             const command = new PutObjectCommand(params);
             const response = await this.s3Client.send(command);
             uploadResult.success = response.$metadata.httpStatusCode == 200;
-            console.log('File uploaded successfully', uploadResult, response);
+            // console.log('File uploaded successfully', uploadResult, response);
 
         } catch (error) {
             console.error('Error uploading file', error);

@@ -17,11 +17,12 @@ export class File extends Document {
     name: string
 
     @Prop({
-        // required: true,
         type: String,
+        unique: false,
+        required: false,
     })
     @IsString()
-    documentReference: string
+    s3Reference: string
 
     @Prop({
         type: Boolean

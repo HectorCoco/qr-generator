@@ -4,11 +4,11 @@ export class CreateDocumentDto {
 
     @IsString()
     @MinLength(1)
-    name: string
+    name?: string
 
-    @IsString()
-    @MinLength(1)
-    documetReference: string
+    // @IsString()
+    // @MinLength(1)
+    s3Reference: string
 
     // @IsString()
     @IsMongoId()

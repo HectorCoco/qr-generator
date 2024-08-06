@@ -11,6 +11,8 @@ import { handleExceptions } from 'src/common/helpers/handle-exceptions.helper';
 import { S3Service } from 'src/s3/s3.service';
 import * as path from 'path';
 import * as fs from 'fs';
+import { s3Url } from 'src/s3-credentials';
+// import { replaceSpacesWithUnderscores } from 'src/common/helpers/replaceSpacesWithUnder';
 
 @Injectable()
 export class ImagesService {
@@ -25,19 +27,7 @@ export class ImagesService {
 
   ) { }
 
-  /**   Metodo para crear una nueva imagen
-  * The function creates a new image record, associates it with a QR code, saves the image file to
-  * disk, and handles errors appropriately.
-  * @param {CreateImageDto} createImageDto - `createImageDto` is an object that contains the data
-  * needed to create a new image record. It likely includes properties such as `order`, `qr`, and other
-  * details related to the image.
-  * @param file - The `file` parameter in the `create` function is of type `Express.Multer.File`. This
-  * type represents a file uploaded via a form using the Multer middleware in an Express.js
-  * application. It contains information about the uploaded file such as the file buffer, original
-  * name, size, mimetype
-  * @returns The function `create` is returning a Promise that resolves to an `ImageResponseDTO`
-  * object, which represents the response data for the newly created image.
-  */
+  /**   Metodo para crear una nueva imagen */
   async create(createImageDto: CreateImageDto, file: Express.Multer.File): Promise<ImageResponseDTO> {
     // Validar el DTO de entrada
     await validateOrReject(createImageDto);
@@ -46,19 +36,25 @@ export class ImagesService {
       throw new InternalServerErrorException('Error al cargar el archivo de imagen');
 
     }
-    // Convertir el campo order a número si es una cadena
-    createImageDto.order = typeof createImageDto.order === 'string' ? parseInt(createImageDto.order, 10) : createImageDto.order;
-
-    // Crear el nuevo registro de imagen
-    const newImage = new this.imageModel(createImageDto);
-
-    // Relacionar la imagen con el QR, si es necesario
-    const qr = await this.qrModel.findById(createImageDto.qr);
-    newImage.qr = qr;
 
     try {
-      // Intentar guardar el registro de imagen en la base de datos
-      const savedImage = await newImage.save();
+
+      // Convertir el campo order a número si es una cadena
+      createImageDto.order = typeof createImageDto.order === 'string'
+        ? parseInt(createImageDto.order, 10)
+        : createImageDto.order;
+
+      // Crear el nuevo registro de imagen
+      const newImage = new this.imageModel(createImageDto);
+
+      newImage.name = file.originalname;
+
+      const s3_Url = s3Url()
+      newImage.s3Reference = `${s3_Url}/${file.originalname}`
+
+      // Relacionar la imagen con el QR, si es necesario
+      const qr = await this.qrModel.findById(createImageDto.qr);
+      newImage.qr = qr;
 
       // Subir el archivo a S3
       const s3Result = await this.S3Service.uploadFile(file);
@@ -66,38 +62,30 @@ export class ImagesService {
         throw new InternalServerErrorException('Error al subir el archivo a S3');
       }
 
-      // Establecer la referencia de la imagen a la ruta del archivo
-      savedImage.name = file.originalname;
-      savedImage.s3Reference = s3Result.fileName; // Asumiendo que 'fileName' es la referencia de S3
-
-      // Guardar la imagen con las referencias actualizadas en la base de datos
-      await savedImage.save();
+      // Guardar registro de imagen con las referencias actualizadas en la base de datos
+      await newImage.save();
 
       // Devolver la respuesta DTO de la imagen guardada
-      return ImageResponseDTO.from(savedImage);
+      return ImageResponseDTO.from(newImage);
 
     } catch (error) {
       console.error('Error:', error);  // Registrar el error
 
-      // Eliminar el registro de imagen de la base de datos si algo falla
-      if (newImage._id) {
-        await this.imageModel.findByIdAndDelete(newImage._id);
-      }
-
-      throw new InternalServerErrorException('Error al guardar la imagen');
+      throw new InternalServerErrorException('Error al crear registro de imagen');
     }
+
   }
 
-/**
- * The function `createImages` asynchronously creates image records associated with a QR code document
- * using the provided files.
- * @param {QrDocument} qr - The `qr` parameter in the `createImages` function is of type `QrDocument`.
- * It seems to contain an `_id` property that is being extracted using destructuring in the function.
- * @param files - The `files` parameter in the `createImages` function is an array containing the image
- * files that need to be processed and saved. Each element in the array represents an image file and
- * may contain information such as the original name of the file and the file itself. The function
- * iterates over each file
- */
+  /**
+   * The function `createImages` asynchronously creates image records associated with a QR code document
+   * using the provided files.
+   * @param {QrDocument} qr - The `qr` parameter in the `createImages` function is of type `QrDocument`.
+   * It seems to contain an `_id` property that is being extracted using destructuring in the function.
+   * @param files - The `files` parameter in the `createImages` function is an array containing the image
+   * files that need to be processed and saved. Each element in the array represents an image file and
+   * may contain information such as the original name of the file and the file itself. The function
+   * iterates over each file
+   */
   async createImages(qr: QrDocument, files: Array<any>) {
     const { _id } = qr;
     if (files.length <= 0) {
@@ -105,11 +93,12 @@ export class ImagesService {
     }
 
     try {
+      const s3_Url = s3Url()
       let orderCount = 1;
       for (const file of files) {
         const createImageDto: CreateImageDto = {
           name: file.originalname,
-          imageReference: '',
+          s3Reference: `${s3_Url}/${file.originalname}`,
           order: orderCount,
           qr: _id.toString(),
         }
@@ -123,13 +112,13 @@ export class ImagesService {
     }
   }
 
-/**
- * The function `findImagesWithFilters` in TypeScript asynchronously retrieves images with optional
- * filters based on a query string.
- * @param {string} [qr] - The `findImagesWithFilters` function is an asynchronous function that
- * retrieves images based on optional query parameters.
- * @returns An array of ImageResponseDTO objects is being returned.
- */
+  /**
+   * The function `findImagesWithFilters` in TypeScript asynchronously retrieves images with optional
+   * filters based on a query string.
+   * @param {string} [qr] - The `findImagesWithFilters` function is an asynchronous function that
+   * retrieves images based on optional query parameters.
+   * @returns An array of ImageResponseDTO objects is being returned.
+   */
   async findImagesWithFilters(
     qr?: string,
   ): Promise<Array<ImageResponseDTO>> {
@@ -237,19 +226,11 @@ export class ImagesService {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        // Eliminar el archivo antiguo del directorio si existe
-        const oldFilePath = path.join(__dirname, '..', '..', image.imageReference);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-
         // Guardar el nuevo archivo en disco
         const filename = `${image._id}-${file.originalname}`;
         const newFilePath = path.join(uploadDir, filename);
         fs.writeFileSync(newFilePath, file.buffer);
 
-        // Actualizar la referencia de la imagen y el nombre
-        image.imageReference = path.relative(path.join(__dirname, '..', '..'), newFilePath);
         image.name = file.originalname;
 
         // Subir el archivo a S3 y manejar errores
@@ -303,12 +284,6 @@ export class ImagesService {
       if (image.s3Reference) {
         const s3Key = path.basename(image.s3Reference); // Obtener el nombre del archivo de la URL
         await this.S3Service.deleteFile(s3Key);
-      }
-
-      // Eliminar el archivo del directorio local si existe
-      const filePath = path.join(__dirname, '..', '..', image.imageReference);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
       }
 
       // Eliminar el registro de la base de datos

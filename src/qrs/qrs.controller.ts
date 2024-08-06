@@ -1,4 +1,4 @@
-import { Controller, Query, Get, Post, Body, Put, Patch, Param, Delete, UseInterceptors, UploadedFiles, } from '@nestjs/common';
+import { Controller, Query, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, } from '@nestjs/common';
 import { QrsService } from './qrs.service';
 import { CreateQrDto } from './dto/create-qr.dto';
 import { UpdateQrDto } from './dto/update-qr.dto';

@@ -23,7 +23,7 @@ export class Image extends Document {
         required: false,
     })
     @IsString()
-    imageReference?: string
+    s3Reference?: string;
 
     @Prop({
         type: Number,
@@ -62,13 +62,6 @@ export class Image extends Document {
     @IsObject()
     qr?: QrDocument;
 
-    @Prop({
-        type: String,
-        unique: false,
-        required: false,
-    })
-    @IsString()
-    s3Reference?: string;
 }
 
 

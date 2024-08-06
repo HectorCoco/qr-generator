@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -8,6 +8,9 @@ import { QrDocument } from 'src/qrs/entities/qr.entity';
 import DocumentResponseDTO from './dto/document-response.dto';
 import { handleExceptions } from 'src/common/helpers/handle-exceptions.helper';
 import { validateOrReject } from 'class-validator';
+import { S3Service } from 'src/s3/s3.service';
+import { s3Url } from 'src/s3-credentials';
+import { replaceSpacesWithUnderscores } from 'src/common/helpers/replaceSpacesWithUnder';
 
 @Injectable()
 export class FilesService {
@@ -16,25 +19,43 @@ export class FilesService {
     @InjectModel('File')
     private readonly fileModel: Model<FileDocument>,
     @InjectModel('Qr')
-    private readonly qrModel: Model<QrDocument>
+    private readonly qrModel: Model<QrDocument>,
+    private readonly S3Service: S3Service,
   ) { }
 
-  async create(createDocumentDto: CreateDocumentDto): Promise<DocumentResponseDTO> {
+  async create(createDocumentDto: CreateDocumentDto, file: Express.Multer.File): Promise<DocumentResponseDTO> {
 
     await validateOrReject(createDocumentDto)
 
+    if (!file) {
+      throw new InternalServerErrorException('Error al cargar el archivo de imagen');
+
+    }
 
     try {
       const newDocument = new this.fileModel(createDocumentDto)
-      newDocument.name = createDocumentDto.name.toLocaleLowerCase()
-      newDocument.documentReference = createDocumentDto.documetReference
-      const _idQr = new Types.ObjectId(createDocumentDto.qr)
-      const qr = await this.qrModel.findById(_idQr).exec()
-      newDocument.qr = qr
 
-      const document = await newDocument.save()
+      newDocument.name = file.originalname
 
-      return DocumentResponseDTO.from(document)
+      const s3_Url = s3Url()
+      newDocument.s3Reference = `${s3_Url}/${file.originalname}`
+
+      // Relacionar la imagen con el QR, si es necesario
+      const qr = await this.qrModel.findById(createDocumentDto.qr);
+      newDocument.qr = qr;
+
+      // Subir el archivo a S3
+      const s3Result = await this.S3Service.uploadFile(file);
+      if (!s3Result.success) {
+        throw new InternalServerErrorException('Error al subir el archivo a S3');
+      }
+
+      // Guardar registro con las referencias actualizadas en la base de datos
+      console.log(newDocument)
+      await newDocument.save()
+
+      // Devolver la respuesta DTO del documento guardada
+      return DocumentResponseDTO.from(newDocument)
 
     } catch (error) {
       console.log(error)

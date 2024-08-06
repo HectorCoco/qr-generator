@@ -6,7 +6,7 @@ export default class DocumentResponseDTO {
     constructor(
         public id: string,
         public name: string,
-        public documenttReference: string,
+        public s3Reference: string,
         public active: boolean,
         public createdAt: string,
         public modifiedAt: string,
@@ -14,23 +14,16 @@ export default class DocumentResponseDTO {
 
     ) { }
     // Static method to convert a PostDocument to a PostResponseDTO instance
-    static from = ({
-        _id,
-        name,
-        documentReference,
-        active,
-        createdAt,
-        modifiedAt,
-        qr,
-    }: FileDocument): DocumentResponseDTO =>
-        new DocumentResponseDTO(
-            // Convert MongoDB ObjectId to its hexadecimal representation
-            _id.toString(),
-            name,
-            documentReference,
-            active,
-            createdAt,
-            modifiedAt,
-            qr
+    static from(file: FileDocument): DocumentResponseDTO { // Añadir un parámetro files que es un array
+
+        return new DocumentResponseDTO(
+            file._id.toString(),
+            file.name,
+            file.s3Reference,
+            file.active,
+            file.createdAt,
+            file.modifiedAt,
+            file.qr
         )
+    }
 }

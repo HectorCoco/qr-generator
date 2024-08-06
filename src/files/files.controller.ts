@@ -1,17 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import DocumentResponseDTO from './dto/document-response.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('files')
 export class FilesController {
-  constructor(private readonly documentsService: FilesService) { }
+  constructor(
+    private readonly documentsService: FilesService
+  ) { }
 
   @Post()
-  create(@Body() createDocumentDto: CreateDocumentDto): Promise<DocumentResponseDTO> {
+  @UseInterceptors(FileInterceptor('file'))
+  async create(
+    @Body() createDocumentDto: CreateDocumentDto,
+    @UploadedFile() file: Express.Multer.File): Promise<DocumentResponseDTO> {
 
-    return this.documentsService.create(createDocumentDto)
+    return this.documentsService.create(createDocumentDto, file)
   }
 
   @Get()

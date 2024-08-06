@@ -9,7 +9,7 @@ export class CreateImageDto {
 
     // @IsString()
     // @MinLength(1)
-    imageReference?: string
+    s3Reference?: string
 
     @Transform(({ value }) => parseInt(value, 10))
     @IsInt()
